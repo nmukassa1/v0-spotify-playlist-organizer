@@ -144,14 +144,14 @@ export default function Home() {
   return (
     <div className="flex h-dvh flex-col bg-background">
       <MobileHeader activeView={activeView} onViewChange={setActiveView} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-scroll">
         <AppSidebar
           activeView={activeView}
           onViewChange={setActiveView}
           unsortedCount={songs.length}
           playlistCount={acceptedPlaylists.size}
         />
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
           {renderContent()}
         </main>
       </div>
