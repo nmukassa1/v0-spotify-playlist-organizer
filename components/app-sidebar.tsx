@@ -1,7 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Home, Library, Sparkles, ListMusic, Settings, ChevronRight } from "lucide-react"
+import { Home, Library, Sparkles, ListMusic, ChevronRight } from "lucide-react"
+import { UserButton, useUser } from "@clerk/nextjs"
 
 interface AppSidebarProps {
   activeView: string
@@ -18,6 +19,8 @@ const navItems = [
 ]
 
 export function AppSidebar({ activeView, onViewChange, unsortedCount, playlistCount }: AppSidebarProps) {
+  const { user } = useUser()
+
   return (
     <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-sidebar">
       {/* Logo */}
@@ -72,18 +75,25 @@ export function AppSidebar({ activeView, onViewChange, unsortedCount, playlistCo
         </ul>
       </nav>
 
-      {/* Bottom section */}
-      <div className="border-t border-sidebar-border px-3 py-4">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
-          <Settings className="h-4 w-4" />
-          <span>Settings</span>
-        </button>
-        <div className="mt-3 mx-3 rounded-lg bg-secondary/50 p-3">
-          <p className="text-xs font-medium text-sidebar-foreground">Connect Spotify</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">Link your account to import your liked songs</p>
-          <button className="mt-2 w-full rounded-md bg-primary py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-            Connect
-          </button>
+      {/* User section */}
+      <div className="border-t border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "h-9 w-9",
+              },
+            }}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {user?.firstName || user?.username || "User"}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {user?.primaryEmailAddress?.emailAddress || "Spotify Connected"}
+            </p>
+          </div>
         </div>
       </div>
     </aside>

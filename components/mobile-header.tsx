@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Sparkles, Menu, X, Home, Library, ListMusic } from "lucide-react"
+import { UserButton } from "@clerk/nextjs"
 
 interface MobileHeaderProps {
   activeView: string
@@ -28,13 +29,23 @@ export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
           </div>
           <h1 className="text-base font-bold text-foreground">Sortify</h1>
         </div>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-        >
-          {isOpen ? <X className="h-4 w-4 text-foreground" /> : <Menu className="h-4 w-4 text-foreground" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "h-7 w-7",
+              },
+            }}
+          />
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+          >
+            {isOpen ? <X className="h-4 w-4 text-foreground" /> : <Menu className="h-4 w-4 text-foreground" />}
+          </button>
+        </div>
       </div>
 
       {isOpen && (
