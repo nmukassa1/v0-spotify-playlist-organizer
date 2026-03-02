@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import type { Song } from "@/lib/mock-data"
-import { Search, Clock, Music, Check, Grip } from "lucide-react"
+import { Search, Music, Check, Grip } from "lucide-react"
 
 interface SongListProps {
   songs: Song[]
@@ -15,18 +15,21 @@ interface SongListProps {
 
 export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDeselectAll }: SongListProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState<"recent" | "artist" | "title">("recent")
+  const [sortBy, setSortBy] = useState<"recent" | "artist" | "title" | "year" | "popularity">("recent")
 
   const filteredSongs = songs
     .filter(
       (song) =>
         song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.album.toLowerCase().includes(searchQuery.toLowerCase())
+        song.album.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        song.featuredArtists.some((fa) => fa.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .sort((a, b) => {
       if (sortBy === "artist") return a.artist.localeCompare(b.artist)
       if (sortBy === "title") return a.title.localeCompare(b.title)
+      if (sortBy === "year") return b.releaseYear - a.releaseYear
+      if (sortBy === "popularity") return b.popularity - a.popularity
       return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
     })
 
@@ -40,15 +43,15 @@ export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDe
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search your songs..."
+            placeholder="Search by title, artist, or album..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg bg-secondary pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Search songs"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {(["recent", "title", "artist"] as const).map((sort) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {(["recent", "title", "artist", "year", "popularity"] as const).map((sort) => (
             <button
               key={sort}
               onClick={() => setSortBy(sort)}
@@ -124,6 +127,9 @@ export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDe
                 <div className="min-w-0 flex-1">
                   <p className={cn("truncate text-sm font-medium", isSelected ? "text-primary" : "text-foreground")}>
                     {song.title}
+                    {song.featuredArtists.length > 0 && (
+                      <span className="text-muted-foreground font-normal"> ft. {song.featuredArtists.join(", ")}</span>
+                    )}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {song.artist} &middot; {song.album}
@@ -131,18 +137,21 @@ export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDe
                 </div>
 
                 {/* Meta */}
-                <div className="hidden sm:flex flex-col items-end gap-0.5 shrink-0">
-                  <span className="text-[10px] font-mono text-muted-foreground/60">{song.duration}</span>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                    {song.releaseYear}
+                  </span>
                   <span
                     className={cn(
                       "rounded-full px-1.5 py-0.5 text-[9px] font-medium",
-                      song.energy === "high" && "bg-chart-1/15 text-chart-1",
-                      song.energy === "medium" && "bg-chart-3/15 text-chart-3",
-                      song.energy === "low" && "bg-chart-2/15 text-chart-2"
+                      song.popularity >= 90 && "bg-chart-1/15 text-chart-1",
+                      song.popularity >= 70 && song.popularity < 90 && "bg-chart-3/15 text-chart-3",
+                      song.popularity < 70 && "bg-chart-2/15 text-chart-2"
                     )}
                   >
-                    {song.energy}
+                    pop {song.popularity}
                   </span>
+                  <span className="text-[10px] font-mono text-muted-foreground/60">{song.duration}</span>
                 </div>
 
                 <Grip className="h-4 w-4 shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground/60" />

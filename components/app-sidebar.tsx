@@ -13,7 +13,7 @@ interface AppSidebarProps {
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: Home },
   { id: "library", label: "Liked Songs", icon: Library },
-  { id: "suggestions", label: "Smart Sort", icon: Sparkles },
+  { id: "suggestions", label: "Organize", icon: Sparkles },
   { id: "playlists", label: "My Playlists", icon: ListMusic },
 ]
 

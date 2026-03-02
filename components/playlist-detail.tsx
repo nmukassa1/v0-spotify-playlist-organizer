@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { SuggestedPlaylist, Song } from "@/lib/mock-data"
+import { categoryLabels } from "@/lib/mock-data"
 import { ArrowLeft, Check, Plus, Music, Play, X, Shuffle } from "lucide-react"
 
 interface PlaylistDetailProps {
@@ -32,6 +33,13 @@ export function PlaylistDetail({
   const activeSongs = playlistSongs.filter((s) => !removedSongs.has(s.id))
   const removed = playlistSongs.filter((s) => removedSongs.has(s.id))
 
+  const totalDuration = (() => {
+    const total = activeSongs.reduce((a, s) => a + s.durationSeconds, 0)
+    const m = Math.floor(total / 60)
+    const s = total % 60
+    return `${m}:${s.toString().padStart(2, "0")}`
+  })()
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -50,11 +58,13 @@ export function PlaylistDetail({
               <Music className="h-7 w-7 sm:h-8 sm:w-8 text-foreground" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Suggested Playlist</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                {categoryLabels[playlist.category]}
+              </p>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground">{playlist.name}</h2>
               <p className="text-sm text-muted-foreground mt-0.5">{playlist.description}</p>
               <p className="text-xs font-mono text-muted-foreground/60 mt-1">
-                {activeSongs.length} tracks
+                {activeSongs.length} tracks &middot; {totalDuration}
               </p>
             </div>
           </div>
@@ -106,11 +116,19 @@ export function PlaylistDetail({
                 <Music className="h-4 w-4 text-foreground/80" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">{song.title}</p>
+                <p className="text-sm font-medium text-foreground truncate">
+                  {song.title}
+                  {song.featuredArtists.length > 0 && (
+                    <span className="text-muted-foreground font-normal"> ft. {song.featuredArtists.join(", ")}</span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground truncate">{song.artist} &middot; {song.album}</p>
               </div>
-              <span className="hidden sm:block rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
-                {song.mood}
+              <span className="hidden sm:block rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {song.releaseYear}
+              </span>
+              <span className="hidden sm:block text-[10px] font-mono text-muted-foreground/40">
+                pop {song.popularity}
               </span>
               <span className="text-xs font-mono text-muted-foreground/50">{song.duration}</span>
               <button
@@ -132,21 +150,15 @@ export function PlaylistDetail({
             </p>
             <div className="flex flex-col gap-1">
               {removed.map((song) => (
-                <div
-                  key={song.id}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 opacity-50"
-                >
-                  <div className={cn("h-8 w-8 shrink-0 rounded flex items-center justify-center bg-secondary")}>
+                <div key={song.id} className="flex items-center gap-3 rounded-lg px-2 py-2 opacity-50">
+                  <div className="h-8 w-8 shrink-0 rounded flex items-center justify-center bg-secondary">
                     <Music className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-muted-foreground line-through truncate">{song.title}</p>
                     <p className="text-xs text-muted-foreground/50 truncate">{song.artist}</p>
                   </div>
-                  <button
-                    onClick={() => onRestoreSong(song.id)}
-                    className="text-xs text-primary hover:underline"
-                  >
+                  <button onClick={() => onRestoreSong(song.id)} className="text-xs text-primary hover:underline">
                     Restore
                   </button>
                 </div>
