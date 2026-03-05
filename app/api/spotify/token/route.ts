@@ -1,19 +1,14 @@
-import { auth, clerkClient } from "@clerk/nextjs/server"
+import { getSpotifyAccessToken } from "@/lib/spotify-server"
 import { NextResponse } from "next/server"
 
+/**
+ * GET /api/spotify/token
+ * Returns the user's Spotify access token (e.g. for Web Playback SDK).
+ * Prefer using /api/spotify/playlists and other proxy routes so the token stays server-side.
+ */
 export async function GET() {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
-    const client = await clerkClient()
-    const provider = "oauth_spotify"
-
-    const clerkResponse = await client.users.getUserOauthAccessToken(userId, provider)
-    const accessToken = clerkResponse.data[0]?.token
+    const accessToken = await getSpotifyAccessToken()
 
     if (!accessToken) {
       return NextResponse.json(
@@ -24,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json({ accessToken })
   } catch (error) {
-    console.error("Failed to get Spotify OAuth token:", error)
+    console.error("Failed to get Spotify token:", error)
     return NextResponse.json(
       { error: "Failed to retrieve Spotify access token" },
       { status: 500 }

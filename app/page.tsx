@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { songs, suggestedPlaylists } from "@/lib/mock-data"
+import { useSpotifyLikedSongs } from "@/hooks/use-spotify"
 import { AppSidebar } from "@/components/app-sidebar/app-sidebar"
 import { MobileHeader } from "@/components/mobile-header/mobile-header"
 import { DashboardView } from "@/components/dashboard/dashboard-view"
@@ -16,6 +17,18 @@ export default function Home() {
   const [acceptedPlaylists, setAcceptedPlaylists] = useState<Set<string>>(new Set())
   const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null)
   const [removedSongs, setRemovedSongs] = useState<Map<string, Set<string>>>(new Map())
+
+  const { tracks, total, isLoading, error } = useSpotifyLikedSongs(50, 0)
+
+  useEffect(() => {
+    if (error) {
+      console.error("[Spotify] Error fetching liked songs:", error)
+      return
+    }
+    if (!isLoading && tracks.length >= 0) {
+      console.log("[Spotify] Liked songs:", { total, tracks })
+    }
+  }, [tracks, total, isLoading, error])
 
   const handleToggleSong = useCallback((songId: string) => {
     setSelectedSongs((prev) => {

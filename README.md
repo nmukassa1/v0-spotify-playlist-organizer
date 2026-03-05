@@ -46,7 +46,9 @@ Open [http://localhost:3000](http://localhost:3000). For auth, configure Clerk v
 | `globals.css` | Global styles and Tailwind |
 | `sign-in/[[...sign-in]]/page.tsx` | Clerk sign-in catch-all |
 | `sign-up/[[...sign-up]]/page.tsx` | Clerk sign-up catch-all |
-| `api/spotify/token/route.ts` | API route for Spotify token (if used) |
+| `api/spotify/token/route.ts` | Returns Spotify access token for current user (e.g. for Web Playback SDK). |
+| `api/spotify/status/route.ts` | Returns `{ connected }` for Spotify connection status. |
+| `api/spotify/playlists/route.ts` | Proxies Spotify current user playlists (token server-side only). |
 
 **`page.tsx`** holds the single source of truth for:
 
@@ -143,6 +145,42 @@ Features are split into folders; each folder has one main view component and sma
 | `nav-config.ts` | `navItems` (id, label, icon) and `NavViewId` for sidebar and mobile nav. |
 | `category-styles.ts` | `categoryIcons`, `categoryIconByKey`, `categoryAccents`, `categoryBadgeStyles` for dashboard and playlist UI. |
 | `utils.ts` | `cn()` (e.g. `clsx` + `tailwind-merge`) for class names. |
+| `spotify-types.ts` | Shared Spotify API types (playlists response, etc.). Safe to import from client. |
+| `spotify-server.ts` | **Server-only.** Gets Spotify access token via Clerk and calls Spotify Web API. Used only in API routes. |
+
+---
+
+## Spotify integration (token + state)
+
+**Access token**
+
+- The access token is **never stored in client state**. It is obtained **only on the server** in `lib/spotify-server.ts` using Clerk’s `getUserOauthAccessToken(userId, "oauth_spotify")`.
+- Users must connect Spotify via Clerk (OAuth). Configure Spotify as a connected provider in the Clerk dashboard.
+
+**API routes**
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/spotify/status` | Returns `{ connected: true }` or `{ connected: false }`. Use to gate UI (e.g. “Connect Spotify” vs show data). |
+| `GET /api/spotify/playlists` | Proxies Spotify’s current user playlists. Query: `limit`, `offset`. Token is used only on the server. |
+| `GET /api/spotify/token` | Returns `{ accessToken }` for the current user. Use only when the client needs the token (e.g. Web Playback SDK). Prefer proxy routes so the token stays server-side. |
+
+**State management**
+
+- **Server state** (playlists, status) is fetched from these API routes. **SWR** is used so that:
+  - Any component can call `useSpotifyPlaylists()` or `useSpotifyStatus()` and get the same cached data (SWR keys are the shared source of truth).
+  - No separate React Context is needed for playlists; SWR handles caching and revalidation.
+- **Hooks** in `hooks/use-spotify.ts`:
+  - `useSpotifyStatus()` — `isConnected`, `isLoading`, `error`, `mutate`
+  - `useSpotifyPlaylists(limit?, offset?)` — `playlists`, `total`, `isLoading`, `error`, `mutate`
+  - `useSpotify(limit?)` — combines both (connection + playlists) for convenience.
+- Use `mutate` / `mutatePlaylists` after creating or updating playlists so the list revalidates.
+
+**Adding more Spotify data**
+
+1. Add a server helper in `lib/spotify-server.ts` (e.g. `getSpotifyLikedSongs()`) that uses `getSpotifyAccessToken()` and `spotifyFetch()`.
+2. Add an API route under `app/api/spotify/...` that calls that helper and returns JSON.
+3. Add a hook in `hooks/use-spotify.ts` that uses `useSWR` with the new route. All components using that hook will share the same cache.
 
 ---
 
@@ -150,6 +188,7 @@ Features are split into folders; each folder has one main view component and sma
 
 - `use-toast.ts` — toast notifications (used by `ui/toast`).
 - `use-mobile.ts` — breakpoint hook for responsive behavior.
+- `use-spotify.ts` — `useSpotifyStatus()`, `useSpotifyPlaylists()`, `useSpotify()` for Spotify connection and playlists (SWR-backed).
 
 ---
 
