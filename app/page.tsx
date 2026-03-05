@@ -2,13 +2,13 @@
 
 import { useState, useCallback } from "react"
 import { songs, suggestedPlaylists } from "@/lib/mock-data"
-import { AppSidebar } from "@/components/app-sidebar"
-import { MobileHeader } from "@/components/mobile-header"
-import { DashboardView } from "@/components/dashboard-view"
-import { SongList } from "@/components/song-list"
-import { PlaylistSuggestions } from "@/components/playlist-suggestions"
-import { PlaylistDetail } from "@/components/playlist-detail"
-import { MyPlaylistsView } from "@/components/my-playlists-view"
+import { AppSidebar } from "@/components/app-sidebar/app-sidebar"
+import { MobileHeader } from "@/components/mobile-header/mobile-header"
+import { DashboardView } from "@/components/dashboard/dashboard-view"
+import { SongList } from "@/components/song-list/song-list"
+import { PlaylistSuggestions } from "@/components/playlist-suggestions/playlist-suggestions"
+import { PlaylistDetail } from "@/components/playlist-detail/playlist-detail"
+import { MyPlaylistsView } from "@/components/my-playlists/my-playlists-view"
 
 export default function Home() {
   const [activeView, setActiveView] = useState("dashboard")

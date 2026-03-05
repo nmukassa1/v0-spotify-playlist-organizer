@@ -2,20 +2,14 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { Sparkles, Menu, X, Home, Library, ListMusic } from "lucide-react"
+import { Sparkles, Menu, X } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
+import { navItems } from "@/lib/nav-config"
 
 interface MobileHeaderProps {
   activeView: string
   onViewChange: (view: string) => void
 }
-
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home },
-  { id: "library", label: "Liked Songs", icon: Library },
-  { id: "suggestions", label: "Organize", icon: Sparkles },
-  { id: "playlists", label: "My Playlists", icon: ListMusic },
-]
 
 export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
