@@ -10,6 +10,8 @@ export interface Song {
   releaseYear: number
   popularity: number // 0-100
   coverColor: string
+  /** Optional image URL (e.g. from Spotify album art) */
+  imageUrl?: string
 }
 
 export type PlaylistCategory = "artist" | "features" | "year" | "popularity" | "duration"

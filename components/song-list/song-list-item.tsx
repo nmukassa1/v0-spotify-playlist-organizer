@@ -35,7 +35,12 @@ export function SongListItem({ song, index, isSelected, onToggle }: SongListItem
         )}
       </div>
 
-      <SongCover colorClass={song.coverColor} size="lg" className="rounded-md" />
+      <SongCover
+        colorClass={song.coverColor}
+        imageUrl={song.imageUrl}
+        size="lg"
+        className="rounded-md"
+      />
 
       <div className="min-w-0 flex-1">
         <p className={cn("truncate text-sm font-medium", isSelected ? "text-primary" : "text-foreground")}>

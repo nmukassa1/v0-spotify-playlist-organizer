@@ -33,6 +33,7 @@ export interface SpotifyArtist {
 export interface SpotifyAlbum {
   id: string
   name: string
+  release_date?: string
   images: Array<{ url: string; height: number | null; width: number | null }>
 }
 

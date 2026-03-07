@@ -10,22 +10,22 @@ interface MyPlaylistsViewProps {
   playlists: SuggestedPlaylist[]
   songs: Song[]
   acceptedPlaylists: Set<string>
-  onNavigate: (view: string) => void
   onViewPlaylist: (playlistId: string) => void
+  onViewSuggestions?: () => void
 }
 
 export function MyPlaylistsView({
   playlists,
   songs,
   acceptedPlaylists,
-  onNavigate,
   onViewPlaylist,
+  onViewSuggestions,
 }: MyPlaylistsViewProps) {
   const accepted = playlists.filter((p) => acceptedPlaylists.has(p.id))
 
   if (accepted.length === 0) {
     return (
-      <EmptyPlaylistsState onViewSuggestions={() => onNavigate("suggestions")} />
+      <EmptyPlaylistsState onViewSuggestions={onViewSuggestions ?? (() => {})} />
     )
   }
 

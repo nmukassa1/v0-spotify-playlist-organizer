@@ -8,6 +8,8 @@ interface SongCoverProps {
   colorClass: string
   iconClassName?: string
   size?: "sm" | "md" | "lg"
+  /** When set, shows album art instead of colored block */
+  imageUrl?: string | null
 }
 
 const sizeClasses = {
@@ -22,12 +24,25 @@ const iconSizes = {
   lg: "h-4 w-4",
 }
 
-export function SongCover({ className, colorClass, iconClassName, size = "md" }: SongCoverProps) {
+export function SongCover({ className, colorClass, iconClassName, size = "md", imageUrl }: SongCoverProps) {
+  const sizeClass = sizeClasses[size]
+  if (imageUrl) {
+    return (
+      <div className={cn("shrink-0 overflow-hidden rounded flex items-center justify-center bg-muted", sizeClass, className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      </div>
+    )
+  }
   return (
     <div
       className={cn(
         "shrink-0 rounded flex items-center justify-center",
-        sizeClasses[size],
+        sizeClass,
         colorClass,
         className
       )}

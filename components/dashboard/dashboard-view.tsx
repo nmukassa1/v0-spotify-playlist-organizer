@@ -13,23 +13,37 @@ interface DashboardViewProps {
   songs: Song[]
   playlists: SuggestedPlaylist[]
   acceptedPlaylists: Set<string>
-  onNavigate: (view: string) => void
+  /** Total liked songs count from API (for stat). When not set, uses songs.length */
+  totalLikedSongs?: number
+  /** When true, stat cards and recently added show loading state */
+  isLoading?: boolean
 }
 
-export function DashboardView({ songs, playlists, acceptedPlaylists, onNavigate }: DashboardViewProps) {
+export function DashboardView({
+  songs,
+  playlists,
+  acceptedPlaylists,
+  totalLikedSongs,
+  isLoading,
+}: DashboardViewProps) {
+  const likedCount = totalLikedSongs ?? songs.length
   const uniqueArtists = new Set(songs.map((s) => s.artist)).size
   const featureTracks = songs.filter((s) => s.featuredArtists.length > 0).length
-  const yearRange = (() => {
-    const years = songs.map((s) => s.releaseYear)
-    return `${Math.min(...years)} - ${Math.max(...years)}`
-  })()
-  const avgPopularity = Math.round(songs.reduce((a, s) => a + s.popularity, 0) / songs.length)
-  const avgDuration = (() => {
-    const avg = songs.reduce((a, s) => a + s.durationSeconds, 0) / songs.length
-    const m = Math.floor(avg / 60)
-    const s = Math.round(avg % 60)
-    return `${m}:${s.toString().padStart(2, "0")}`
-  })()
+  const yearRange =
+    songs.length > 0
+      ? `${Math.min(...songs.map((s) => s.releaseYear))} - ${Math.max(...songs.map((s) => s.releaseYear))}`
+      : "—"
+  const avgPopularity =
+    songs.length > 0 ? Math.round(songs.reduce((a, s) => a + s.popularity, 0) / songs.length) : 0
+  const avgDuration =
+    songs.length > 0
+      ? (() => {
+          const avg = songs.reduce((a, s) => a + s.durationSeconds, 0) / songs.length
+          const m = Math.floor(avg / 60)
+          const s = Math.round(avg % 60)
+          return `${m}:${s.toString().padStart(2, "0")}`
+        })()
+      : "—"
 
   const categorySummary: CategorySummaryItem[] = [
     { category: "artist", stat: `${uniqueArtists}`, detail: "unique artists" },
@@ -55,15 +69,15 @@ export function DashboardView({ songs, playlists, acceptedPlaylists, onNavigate 
   )
 
   const statCards = [
-    { label: "Liked Songs", value: songs.length, icon: Music, accent: "text-chart-1", bg: "bg-chart-1/10" },
-    { label: "Suggestions Ready", value: playlists.length, icon: Sparkles, accent: "text-chart-3", bg: "bg-chart-3/10" },
-    { label: "Playlists Created", value: acceptedPlaylists.size, icon: ListMusic, accent: "text-chart-2", bg: "bg-chart-2/10" },
-    { label: "Songs Organized", value: totalOrganized, icon: TrendingUp, accent: "text-chart-5", bg: "bg-chart-5/10" },
+    { label: "Liked Songs", value: likedCount, icon: Music, accent: "text-chart-1", bg: "bg-chart-1/10", isLoading },
+    { label: "Suggestions Ready", value: playlists.length, icon: Sparkles, accent: "text-chart-3", bg: "bg-chart-3/10", isLoading: false },
+    { label: "Playlists Created", value: acceptedPlaylists.size, icon: ListMusic, accent: "text-chart-2", bg: "bg-chart-2/10", isLoading: false },
+    { label: "Songs Organized", value: totalOrganized, icon: TrendingUp, accent: "text-chart-5", bg: "bg-chart-5/10", isLoading: false },
   ]
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 overflow-y-auto">
-      <DashboardWelcome songCount={songs.length} />
+      <DashboardWelcome songCount={likedCount} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
@@ -74,6 +88,7 @@ export function DashboardView({ songs, playlists, acceptedPlaylists, onNavigate 
             icon={stat.icon}
             accent={stat.accent}
             bg={stat.bg}
+            isLoading={stat.isLoading}
           />
         ))}
       </div>
@@ -83,15 +98,16 @@ export function DashboardView({ songs, playlists, acceptedPlaylists, onNavigate 
           summary={categorySummary}
           playlistsByCategory={playlistsByCategory}
         />
-        <DashboardQuickActions
-          onNavigateToSuggestions={() => onNavigate("suggestions")}
-          onNavigateToLibrary={() => onNavigate("library")}
+      <DashboardQuickActions
+          suggestionsHref="/suggestions"
+          libraryHref="/library"
         />
       </div>
 
       <DashboardRecentlyAdded
         songs={recentlyAddedSongs}
-        onViewAll={() => onNavigate("library")}
+        viewAllHref="/library"
+        isLoading={isLoading}
       />
     </div>
   )

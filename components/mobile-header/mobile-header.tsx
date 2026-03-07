@@ -1,18 +1,21 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Sparkles, Menu, X } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { navItems } from "@/lib/nav-config"
 
-interface MobileHeaderProps {
-  activeView: string
-  onViewChange: (view: string) => void
-}
-
-export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
+export function MobileHeader() {
   const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === "/playlists") return pathname === "/playlists" || pathname.startsWith("/playlists/")
+    return pathname === href
+  }
 
   return (
     <header className="lg:hidden border-b border-border bg-sidebar">
@@ -46,24 +49,22 @@ export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
         <nav className="border-t border-border px-3 py-2">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeView === item.id
+            const active = isActive(item.href)
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => {
-                  onViewChange(item.id)
-                  setIsOpen(false)
-                }}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
+                  active
                     ? "bg-sidebar-accent text-sidebar-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
                 )}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
-              </button>
+              </Link>
             )
           })}
         </nav>

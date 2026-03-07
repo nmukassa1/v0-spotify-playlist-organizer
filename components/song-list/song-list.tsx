@@ -12,9 +12,21 @@ interface SongListProps {
   onToggleSong: (songId: string) => void
   onSelectAll: () => void
   onDeselectAll: () => void
+  /** When true, shows loading state instead of the list */
+  isLoading?: boolean
+  /** Optional error message to display */
+  error?: string | null
 }
 
-export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDeselectAll }: SongListProps) {
+export function SongList({
+  songs,
+  selectedSongs,
+  onToggleSong,
+  onSelectAll,
+  onDeselectAll,
+  isLoading,
+  error,
+}: SongListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<SortOption>("recent")
 
@@ -35,6 +47,46 @@ export function SongList({ songs, selectedSongs, onToggleSong, onSelectAll, onDe
     })
 
   const allSelected = filteredSongs.length > 0 && filteredSongs.every((s) => selectedSongs.has(s.id))
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 p-8 text-center text-muted-foreground">
+        <p className="text-sm">{error}</p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <SongSearchBar
+          searchQuery=""
+          onSearchChange={() => {}}
+          sortBy="recent"
+          onSortChange={() => {}}
+        />
+        <div className="flex flex-1 items-center justify-center p-8">
+          <p className="text-sm text-muted-foreground">Loading your liked songs...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (songs.length === 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <SongSearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
+        <div className="flex flex-1 items-center justify-center p-8 text-center text-muted-foreground">
+          <p className="text-sm">No liked songs yet. Connect Spotify and add some.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">
