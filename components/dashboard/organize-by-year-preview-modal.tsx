@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar, ChevronRight, Loader2, Music } from "lucide-react";
+import { Calendar, Check, ChevronRight, Loader2, Music, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { SongCover } from "@/components/song/song-cover";
 import { fetchAllLikedSongs, groupLikedSongsByYear } from "@/lib/liked-songs";
 import type { SpotifySavedTrack } from "@/lib/spotify-types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface OrganizeByYearPreviewModalProps {
   open: boolean;
@@ -61,6 +62,11 @@ export function OrganizeByYearPreviewModal({
 }: OrganizeByYearPreviewModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [created, setCreated] = useState<
+    { year: string; playlistId: string; name: string; trackCount: number }[] | null
+  >(null);
   const [byYear, setByYear] = useState<
     { year: string; tracks: SpotifySavedTrack[] }[] | null
   >(null);
@@ -69,6 +75,7 @@ export function OrganizeByYearPreviewModal({
     if (!open) return;
     setByYear(null);
     setError(null);
+    setCreated(null);
     setLoading(true);
     fetchAllLikedSongs()
       .then((tracks) => {
@@ -83,6 +90,65 @@ export function OrganizeByYearPreviewModal({
   }, [open]);
 
   const totalTracks = byYear?.reduce((n, g) => n + g.tracks.length, 0) ?? 0;
+
+  async function handleCreatePlaylists() {
+    if (!byYear || byYear.length === 0) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/spotify/organize-by-year", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playlists: byYear.map(({ year, tracks }) => ({
+            year,
+            trackIds: tracks.map((s) => s.track.id),
+          })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data.error as string) || res.statusText || "Failed to create playlists");
+        return;
+      }
+      setCreated(data.created ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create playlists");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDeleteReleasedPlaylists() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/spotify/delete-released-playlists", {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data.error as string) || res.statusText || "Failed to delete playlists");
+        return;
+      }
+      setError(null);
+      const count = (data.deleted as number) ?? 0;
+      if (count > 0) {
+        setCreated(null);
+        setByYear(null);
+        setLoading(true);
+        fetchAllLikedSongs()
+          .then((tracks) => setByYear(groupLikedSongsByYear(tracks)))
+          .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
+          .finally(() => setLoading(false));
+      }
+      alert(`Deleted ${count} playlist${count !== 1 ? "s" : ""} starting with "Released".`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete playlists");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,7 +179,7 @@ export function OrganizeByYearPreviewModal({
           </div>
         )}
 
-        {!loading && !error && byYear && (
+        {!loading && !error && byYear && !created && (
           <div className="flex flex-col gap-1 overflow-hidden">
             <p className="text-xs text-muted-foreground pb-2">
               {byYear.length} playlist{byYear.length !== 1 ? "s" : ""} ·{" "}
@@ -131,7 +197,7 @@ export function OrganizeByYearPreviewModal({
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:rotate-90 transition-transform" />
                     <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="font-semibold text-foreground">
-                      Relased: {year}
+                      Released: {year}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {tracks.length} song{tracks.length !== 1 ? "s" : ""}
@@ -153,6 +219,95 @@ export function OrganizeByYearPreviewModal({
                 </Collapsible>
               ))}
             </div>
+            {!created && (
+              <div className="pt-3 border-t border-border space-y-2">
+                <Button
+                  onClick={handleCreatePlaylists}
+                  disabled={creating || byYear.length === 0}
+                  className="w-full"
+                >
+                  {creating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                      Creating playlists…
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 shrink-0" />
+                      Create playlists on Spotify
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={handleDeleteReleasedPlaylists}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                      Deleting…
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      Delete all playlists starting with &quot;Released&quot; (temporary)
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {created && created.length > 0 && (
+          <div className="flex flex-col gap-3 py-2">
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Check className="h-5 w-5 shrink-0" />
+              <span className="font-medium">
+                {created.length} playlist{created.length !== 1 ? "s" : ""} created
+              </span>
+            </div>
+            <ul className="space-y-2 overflow-y-auto max-h-48">
+              {created.map(({ year, name, playlistId, trackCount }) => (
+                <li key={playlistId}>
+                  <a
+                    href={`https://open.spotify.com/playlist/${playlistId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:bg-secondary/50 transition-colors"
+                  >
+                    <span className="font-medium truncate">{name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {trackCount} track{trackCount !== 1 ? "s" : ""}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Open in Spotify to listen. You can close this and run again to create
+              more playlists.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive mt-2"
+              onClick={handleDeleteReleasedPlaylists}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  Delete all playlists starting with &quot;Released&quot; (temporary)
+                </>
+              )}
+            </Button>
           </div>
         )}
 
@@ -160,6 +315,24 @@ export function OrganizeByYearPreviewModal({
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
             <Music className="h-10 w-10 opacity-50" />
             <p className="text-sm">No liked songs to organize.</p>
+            <Button
+              variant="outline"
+              className="mt-2 border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleDeleteReleasedPlaylists}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  Delete all &quot;Released&quot; playlists (temporary)
+                </>
+              )}
+            </Button>
           </div>
         )}
       </DialogContent>

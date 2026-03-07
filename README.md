@@ -154,7 +154,7 @@ Features are split into folders; each folder has one main view component and sma
 
 **Access token**
 
-- The access token is **never stored in client state**. It is obtained **only on the server** in `lib/spotify-server.ts` using Clerk’s `getUserOauthAccessToken(userId, "oauth_spotify")`.
+- The access token is **never stored in client state**. It is obtained **only on the server** in `lib/spotify-server.ts` using Clerk’s `getUserOauthAccessToken(userId, "spotify")`.
 - Users must connect Spotify via Clerk (OAuth). Configure Spotify as a connected provider in the Clerk dashboard.
 
 **API routes**
