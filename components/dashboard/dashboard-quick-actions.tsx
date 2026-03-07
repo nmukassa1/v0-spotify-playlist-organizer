@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { OrganizeByYearPreviewModal } from "@/components/dashboard/organize-by-year-preview-modal";
 
 interface QuickActionItemProps {
   title: string;
@@ -76,6 +77,7 @@ export function DashboardQuickActions({
   libraryHref,
 }: DashboardQuickActionsProps) {
   const [autoSortOpen, setAutoSortOpen] = useState(false);
+  const [yearPreviewOpen, setYearPreviewOpen] = useState(false);
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
@@ -118,8 +120,8 @@ export function DashboardQuickActions({
                 variant="outline"
                 className="h-auto justify-start gap-3 py-3 cursor-pointer"
                 onClick={() => {
-                  /* TODO: organize by year */
                   setAutoSortOpen(false);
+                  setYearPreviewOpen(true);
                 }}
               >
                 <Calendar className="h-4 w-4 shrink-0" />
@@ -161,6 +163,10 @@ export function DashboardQuickActions({
             </div>
           </DialogContent>
         </Dialog>
+        <OrganizeByYearPreviewModal
+          open={yearPreviewOpen}
+          onOpenChange={setYearPreviewOpen}
+        />
         <QuickActionItem
           title="Browse All Songs"
           description="View and manually pick tracks"
