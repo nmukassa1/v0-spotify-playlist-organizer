@@ -58,7 +58,7 @@ export async function GET() {
   }
 
   const rangeLabel =
-    minYear !== null && maxYear !== null ? `${minYear} - ${maxYear}` : "—";
+    minYear !== null && maxYear !== null ? `${minYear} - ${maxYear}` : "0";
 
   return NextResponse.json({
     playlists: released,

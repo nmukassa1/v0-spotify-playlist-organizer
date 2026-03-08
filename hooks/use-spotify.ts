@@ -108,7 +108,7 @@ export function useReleasedPlaylists() {
   return {
     playlists: data?.playlists ?? [],
     count: data?.count ?? 0,
-    range: data?.range ?? "—",
+    range: data?.range ?? "0",
     isLoading,
     error: error?.message ?? null,
     mutate,
