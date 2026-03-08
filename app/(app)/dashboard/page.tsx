@@ -1,6 +1,6 @@
 "use client"
 
-import { useSpotifyLikedSongs } from "@/hooks/use-spotify"
+import { useSpotifyLikedSongs, useReleasedPlaylists } from "@/hooks/use-spotify"
 import { mapSpotifySavedTracksToSongs } from "@/lib/spotify-mappers"
 import { suggestedPlaylists } from "@/lib/mock-data"
 import { useAppState } from "@/contexts/app-state-context"
@@ -11,6 +11,7 @@ const LIKED_LIMIT = 50
 export default function DashboardPage() {
   const { acceptedPlaylists } = useAppState()
   const { tracks, total, isLoading, error } = useSpotifyLikedSongs(LIKED_LIMIT, 0)
+  const { count: releasedPlaylistCount, range: releasedRange, isLoading: releasedLoading, playlists: releasedPlaylists } = useReleasedPlaylists()
   const songs = mapSpotifySavedTracksToSongs(tracks)
 
   return (
@@ -20,6 +21,12 @@ export default function DashboardPage() {
       acceptedPlaylists={acceptedPlaylists}
       totalLikedSongs={total}
       isLoading={isLoading}
+      releasedYearSummary={{
+        range: releasedRange,
+        playlistCount: releasedPlaylistCount,
+        playlists: releasedPlaylists,
+        isLoading: releasedLoading,
+      }}
     />
   )
 }

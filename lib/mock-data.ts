@@ -169,7 +169,7 @@ export const suggestedPlaylists: SuggestedPlaylist[] = [
 export const categoryLabels: Record<PlaylistCategory, string> = {
   artist: "By Artist",
   features: "Features & Collabs",
-  year: "By Release Year",
+  year: "by release year",
   popularity: "By Popularity",
   duration: "By Duration",
 }

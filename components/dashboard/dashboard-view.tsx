@@ -17,6 +17,13 @@ interface DashboardViewProps {
   totalLikedSongs?: number
   /** When true, stat cards and recently added show loading state */
   isLoading?: boolean
+  /** Real "Released:" playlist data for the year row. When set, year row shows range and count from Spotify. */
+  releasedYearSummary?: {
+    range: string
+    playlistCount: number
+    playlists: unknown[]
+    isLoading?: boolean
+  }
 }
 
 export function DashboardView({
@@ -25,14 +32,16 @@ export function DashboardView({
   acceptedPlaylists,
   totalLikedSongs,
   isLoading,
+  releasedYearSummary,
 }: DashboardViewProps) {
   const likedCount = totalLikedSongs ?? songs.length
   const uniqueArtists = new Set(songs.map((s) => s.artist)).size
   const featureTracks = songs.filter((s) => s.featuredArtists.length > 0).length
-  const yearRange =
+  const yearRangeFromSongs =
     songs.length > 0
       ? `${Math.min(...songs.map((s) => s.releaseYear))} - ${Math.max(...songs.map((s) => s.releaseYear))}`
       : "—"
+  const yearRange = releasedYearSummary ? releasedYearSummary.range : yearRangeFromSongs
   const avgPopularity =
     songs.length > 0 ? Math.round(songs.reduce((a, s) => a + s.popularity, 0) / songs.length) : 0
   const avgDuration =
@@ -65,8 +74,11 @@ export function DashboardView({
       acc[p.category].push(p)
       return acc
     },
-    {} as Record<string, SuggestedPlaylist[]>
+    {} as Record<string, unknown[]>
   )
+  if (releasedYearSummary) {
+    playlistsByCategory["year"] = releasedYearSummary.playlists
+  }
 
   const statCards = [
     { label: "Liked Songs", value: likedCount, icon: Music, accent: "text-chart-1", bg: "bg-chart-1/10", isLoading },

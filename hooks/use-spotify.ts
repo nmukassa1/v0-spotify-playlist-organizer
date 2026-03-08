@@ -6,6 +6,7 @@ import type { SpotifyPlaylistsResponse, SpotifySavedTracksResponse } from "@/lib
 const STATUS_KEY = "/api/spotify/status"
 const PLAYLISTS_KEY = "/api/spotify/playlists"
 const LIKED_KEY = "/api/spotify/liked"
+const RELEASED_PLAYLISTS_KEY = "/api/spotify/released-playlists"
 
 async function fetcher<T>(url: string): Promise<T> {
   const res = await fetch(url)
@@ -86,5 +87,30 @@ export function useSpotify(likedLimit = 50) {
     error: status.error ?? liked.error,
     mutateLiked: liked.mutate,
     mutateStatus: status.mutate,
+  }
+}
+
+export interface ReleasedPlaylistsData {
+  playlists: Array<{ id: string; name: string }>
+  count: number
+  range: string
+}
+
+/**
+ * Fetches playlists whose name starts with "Released:" (decade ranges) and the computed year range.
+ */
+export function useReleasedPlaylists() {
+  const { data, error, isLoading, mutate } = useSWR<ReleasedPlaylistsData>(
+    RELEASED_PLAYLISTS_KEY,
+    fetcher,
+    { revalidateOnFocus: true }
+  )
+  return {
+    playlists: data?.playlists ?? [],
+    count: data?.count ?? 0,
+    range: data?.range ?? "—",
+    isLoading,
+    error: error?.message ?? null,
+    mutate,
   }
 }
