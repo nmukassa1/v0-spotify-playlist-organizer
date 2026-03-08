@@ -3,6 +3,7 @@ import { Inter, Space_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { Analytics } from '@vercel/analytics/next'
+import { QueryProvider } from '@/components/providers'
 import './globals.css'
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -42,12 +43,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
-      <html lang="en" className="dark">
-        <body className={`${_inter.variable} ${_spaceMono.variable} font-sans antialiased`}>
-          {children}
-          <Analytics />
-        </body>
-      </html>
+      <QueryProvider>
+        <html lang="en" className="dark">
+          <body className={`${_inter.variable} ${_spaceMono.variable} font-sans antialiased`}>
+            {children}
+            <Analytics />
+          </body>
+        </html>
+      </QueryProvider>
     </ClerkProvider>
   )
 }

@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 /** POST /api/spotify/organize-by-year
  * Body: { playlists: { year: string, trackIds: string[] }[] }
- * Creates a playlist per year and adds the given tracks. Requires playlist-modify-public or playlist-modify-private.
+ * Creates one playlist per release-year group that has tracks (as shown in the UI).
+ * `year` can be a single year or a decade range (e.g. "2000 - 2010"). Only groups with at least one track are created.
  */
 export async function POST(request: NextRequest) {
   let body: { playlists?: { year: string; trackIds: string[] }[] };
@@ -16,10 +17,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const playlists = body.playlists;
-  if (!Array.isArray(playlists) || playlists.length === 0) {
+  const raw = body.playlists;
+  if (!Array.isArray(raw) || raw.length === 0) {
     return NextResponse.json(
       { error: "Body must include a non-empty playlists array" },
+      { status: 400 },
+    );
+  }
+
+  // Only include release-year groups that have at least one track (match UI — no playlists for years with no songs)
+  const playlistsWithTracks: { year: string; uris: string[] }[] = [];
+  for (const entry of raw) {
+    if (!entry?.year || !Array.isArray(entry.trackIds)) continue;
+    const uris = entry.trackIds
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+      .map((id) =>
+        id.startsWith("spotify:track:") ? id : `spotify:track:${id}`,
+      );
+    if (uris.length === 0) continue;
+    playlistsWithTracks.push({ year: entry.year, uris });
+  }
+
+  if (playlistsWithTracks.length === 0) {
+    return NextResponse.json(
+      { error: "No playlists with tracks to create" },
       { status: 400 },
     );
   }
@@ -31,16 +52,7 @@ export async function POST(request: NextRequest) {
     trackCount: number;
   }[] = [];
 
-  for (const { year, trackIds } of playlists) {
-    if (!year || !Array.isArray(trackIds)) continue;
-    const uris = trackIds
-      .filter((id): id is string => typeof id === "string" && id.length > 0)
-      .map((id) =>
-        id.startsWith("spotify:track:") ? id : `spotify:track:${id}`,
-      );
-
-    if (uris.length === 0) continue;
-
+  for (const { year, uris } of playlistsWithTracks) {
     const name =
       year === "Unknown" ? "Released: Unknown year" : `Released: ${year}`;
     const createResult = await createSpotifyPlaylist({

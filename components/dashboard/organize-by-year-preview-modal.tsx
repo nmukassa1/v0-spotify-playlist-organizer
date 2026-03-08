@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, Check, ChevronRight, Loader2, Music, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Calendar, Check, ChevronRight, Loader2, Music, RefreshCw, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,15 +16,23 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { SongCover } from "@/components/song/song-cover";
-import { fetchAllLikedSongs, groupLikedSongsByYear } from "@/lib/liked-songs";
+import { fetchAllLikedSongs, groupLikedSongsByDecade } from "@/lib/liked-songs";
 import type { SpotifySavedTrack } from "@/lib/spotify-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { spotifyKeys } from "@/hooks/use-spotify";
 
 interface OrganizeByYearPreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+type CreatedPlaylistItem = {
+  year: string;
+  playlistId: string;
+  name: string;
+  trackCount: number;
+};
 
 function formatDuration(ms: number): string {
   const m = Math.floor(ms / 60000);
@@ -60,94 +69,112 @@ export function OrganizeByYearPreviewModal({
   open,
   onOpenChange,
 }: OrganizeByYearPreviewModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [created, setCreated] = useState<
-    { year: string; playlistId: string; name: string; trackCount: number }[] | null
-  >(null);
-  const [byYear, setByYear] = useState<
-    { year: string; tracks: SpotifySavedTrack[] }[] | null
-  >(null);
+  const queryClient = useQueryClient();
+  const [created, setCreated] = useState<CreatedPlaylistItem[] | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setByYear(null);
-    setError(null);
-    setCreated(null);
-    setLoading(true);
-    fetchAllLikedSongs()
-      .then((tracks) => {
-        setByYear(groupLikedSongsByYear(tracks));
-      })
-      .catch((e) => {
-        setError(e instanceof Error ? e.message : "Failed to load songs");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [open]);
+  const {
+    data: likedTracks,
+    isLoading: loading,
+    error: queryError,
+    refetch: refetchLiked,
+  } = useQuery({
+    queryKey: spotifyKeys.likedAll(),
+    queryFn: fetchAllLikedSongs,
+    enabled: open,
+  });
 
-  const totalTracks = byYear?.reduce((n, g) => n + g.tracks.length, 0) ?? 0;
+  const byYear = likedTracks ? groupLikedSongsByDecade(likedTracks) : null;
+  const error = queryError ? (queryError instanceof Error ? queryError.message : "Failed to load songs") : null;
 
-  async function handleCreatePlaylists() {
-    if (!byYear || byYear.length === 0) return;
-    setCreating(true);
-    setError(null);
-    try {
+  const createPlaylistsMutation = useMutation({
+    mutationFn: async (payload: { playlists: { year: string; trackIds: string[] }[] }) => {
       const res = await fetch("/api/spotify/organize-by-year", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playlists: byYear.map(({ year, tracks }) => ({
-            year,
-            trackIds: tracks.map((s) => s.track.id),
-          })),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((data.error as string) || res.statusText || "Failed to create playlists");
-        return;
-      }
+      if (!res.ok) throw new Error((data.error as string) || res.statusText || "Failed to create playlists");
+      return data as { created: CreatedPlaylistItem[] };
+    },
+    onSuccess: (data) => {
       setCreated(data.created ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create playlists");
-    } finally {
-      setCreating(false);
-    }
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+    },
+  });
+
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/spotify/organize-by-year/refresh", { method: "POST" });
+      const data = await res.json().catch(() => ({})) as {
+        added?: Record<string, number>;
+        totalAdded?: number;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? res.statusText ?? "Refresh failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.likedAll() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+      const totalAdded = data.totalAdded ?? 0;
+      if (totalAdded > 0 && data.added && Object.keys(data.added).length > 0) {
+        const breakdown = Object.entries(data.added)
+          .map(([range, count]) => `${range}: ${count}`)
+          .join(" · ");
+        alert(`${data.message ?? "Done."}\n\n${breakdown}`);
+      } else {
+        alert(data.message ?? "All liked songs are already in their decade playlists.");
+      }
+    },
+  });
+
+  const deleteReleasedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/spotify/delete-released-playlists", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data.error as string) || res.statusText || "Failed to delete playlists");
+      return data as { deleted: number };
+    },
+    onSuccess: (data) => {
+      setCreated(null);
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.likedAll() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.playlists(50, 0) });
+      refetchLiked();
+      const count = data.deleted ?? 0;
+      if (count > 0) alert(`Deleted ${count} playlist${count !== 1 ? "s" : ""} starting with "Released".`);
+    },
+  });
+
+  const creating = createPlaylistsMutation.isPending;
+  const refreshing = refreshMutation.isPending;
+  const deleting = deleteReleasedMutation.isPending;
+  const createError = createPlaylistsMutation.error?.message ?? null;
+  const refreshError = refreshMutation.error?.message ?? null;
+  const deleteError = deleteReleasedMutation.error?.message ?? null;
+  const mutationError = createError ?? refreshError ?? deleteError;
+
+  const totalTracks = byYear?.reduce((n, g) => n + g.tracks.length, 0) ?? 0;
+  const displayError = error ?? mutationError;
+
+  function handleCreatePlaylists() {
+    if (!byYear || byYear.length === 0) return;
+    createPlaylistsMutation.mutate({
+      playlists: byYear.map(({ year, tracks }) => ({
+        year,
+        trackIds: tracks.map((s) => s.track.id),
+      })),
+    });
   }
 
-  async function handleDeleteReleasedPlaylists() {
-    setDeleting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/spotify/delete-released-playlists", {
-        method: "POST",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((data.error as string) || res.statusText || "Failed to delete playlists");
-        return;
-      }
-      setError(null);
-      const count = (data.deleted as number) ?? 0;
-      if (count > 0) {
-        setCreated(null);
-        setByYear(null);
-        setLoading(true);
-        fetchAllLikedSongs()
-          .then((tracks) => setByYear(groupLikedSongsByYear(tracks)))
-          .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
-          .finally(() => setLoading(false));
-      }
-      alert(`Deleted ${count} playlist${count !== 1 ? "s" : ""} starting with "Released".`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete playlists");
-    } finally {
-      setDeleting(false);
-    }
+  function handleRefresh() {
+    refreshMutation.mutate();
+  }
+
+  function handleDeleteReleasedPlaylists() {
+    deleteReleasedMutation.mutate();
   }
 
   return (
@@ -156,11 +183,10 @@ export function OrganizeByYearPreviewModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Playlists by year
+            Playlists by decade
           </DialogTitle>
           <DialogDescription>
-            Preview how your liked songs will be grouped. Click a year to see
-            its tracks.
+            Preview how your liked songs will be grouped by 10-year release range. Click a range to see its tracks.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,13 +199,13 @@ export function OrganizeByYearPreviewModal({
           </div>
         )}
 
-        {error && (
+        {displayError && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+            {displayError}
           </div>
         )}
 
-        {!loading && !error && byYear && !created && (
+        {!loading && !displayError && byYear && !created && (
           <div className="flex flex-col gap-1 overflow-hidden">
             <p className="text-xs text-muted-foreground pb-2">
               {byYear.length} playlist{byYear.length !== 1 ? "s" : ""} ·{" "}
@@ -239,6 +265,24 @@ export function OrganizeByYearPreviewModal({
                   )}
                 </Button>
                 <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  {refreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                      Refreshing…
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 shrink-0" />
+                      Refresh — add missing songs to existing playlists
+                    </>
+                  )}
+                </Button>
+                <Button
                   variant="outline"
                   className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={handleDeleteReleasedPlaylists}
@@ -270,17 +314,17 @@ export function OrganizeByYearPreviewModal({
               </span>
             </div>
             <ul className="space-y-2 overflow-y-auto max-h-48">
-              {created.map(({ year, name, playlistId, trackCount }) => (
-                <li key={playlistId}>
+              {created.map((item: CreatedPlaylistItem) => (
+                <li key={item.playlistId}>
                   <a
-                    href={`https://open.spotify.com/playlist/${playlistId}`}
+                    href={`https://open.spotify.com/playlist/${item.playlistId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:bg-secondary/50 transition-colors"
                   >
-                    <span className="font-medium truncate">{name}</span>
+                    <span className="font-medium truncate">{item.name}</span>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {trackCount} track{trackCount !== 1 ? "s" : ""}
+                      {item.trackCount} track{item.trackCount !== 1 ? "s" : ""}
                     </span>
                   </a>
                 </li>
@@ -290,6 +334,24 @@ export function OrganizeByYearPreviewModal({
               Open in Spotify to listen. You can close this and run again to create
               more playlists.
             </p>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  Refreshing…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 shrink-0" />
+                  Refresh — add missing songs
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive mt-2"
@@ -311,7 +373,7 @@ export function OrganizeByYearPreviewModal({
           </div>
         )}
 
-        {!loading && !error && byYear && byYear.length === 0 && (
+        {!loading && !displayError && byYear && byYear.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
             <Music className="h-10 w-10 opacity-50" />
             <p className="text-sm">No liked songs to organize.</p>
