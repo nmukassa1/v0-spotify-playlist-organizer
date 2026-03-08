@@ -15,7 +15,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { SongCover } from "@/components/song/song-cover";
-import { fetchAllLikedSongs, groupLikedSongsByYear } from "@/lib/liked-songs";
+import { fetchAllLikedSongs, groupLikedSongsByDecade } from "@/lib/liked-songs";
 import type { SpotifySavedTrack } from "@/lib/spotify-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ export function OrganizeByYearPreviewModal({
     setLoading(true);
     fetchAllLikedSongs()
       .then((tracks) => {
-        setByYear(groupLikedSongsByYear(tracks));
+        setByYear(groupLikedSongsByDecade(tracks));
       })
       .catch((e) => {
         setError(e instanceof Error ? e.message : "Failed to load songs");
@@ -138,7 +138,7 @@ export function OrganizeByYearPreviewModal({
         setByYear(null);
         setLoading(true);
         fetchAllLikedSongs()
-          .then((tracks) => setByYear(groupLikedSongsByYear(tracks)))
+          .then((tracks) => setByYear(groupLikedSongsByDecade(tracks)))
           .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
           .finally(() => setLoading(false));
       }
@@ -156,11 +156,10 @@ export function OrganizeByYearPreviewModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Playlists by year
+            Playlists by decade
           </DialogTitle>
           <DialogDescription>
-            Preview how your liked songs will be grouped. Click a year to see
-            its tracks.
+            Preview how your liked songs will be grouped by 10-year release range. Click a range to see its tracks.
           </DialogDescription>
         </DialogHeader>
 

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 /** POST /api/spotify/organize-by-year
  * Body: { playlists: { year: string, trackIds: string[] }[] }
  * Creates one playlist per release-year group that has tracks (as shown in the UI).
- * Only years that have at least one track are included — no playlists for empty years or for a continuous year range.
+ * `year` can be a single year or a decade range (e.g. "2000 - 2010"). Only groups with at least one track are created.
  */
 export async function POST(request: NextRequest) {
   let body: { playlists?: { year: string; trackIds: string[] }[] };
@@ -72,14 +72,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // const addResult = await addTracksToPlaylist(createResult.data.id, uris);
-    // if ("error" in addResult) {
-    //   console.error("Failed to add tracks to playlist:", addResult.error);
-    //   return NextResponse.json(
-    //     { error: addResult.error, created },
-    //     { status: addResult.status },
-    //   );
-    // }
+    const addResult = await addTracksToPlaylist(createResult.data.id, uris);
+    if ("error" in addResult) {
+      console.error("Failed to add tracks to playlist:", addResult.error);
+      return NextResponse.json(
+        { error: addResult.error, created },
+        { status: addResult.status },
+      );
+    }
 
     created.push({
       year,

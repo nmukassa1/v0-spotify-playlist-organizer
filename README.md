@@ -39,16 +39,16 @@ Open [http://localhost:3000](http://localhost:3000). For auth, configure Clerk v
 
 ### `app/`
 
-| Path | Purpose |
-|------|--------|
-| `layout.tsx` | Root layout: ClerkProvider, fonts (Inter, Space Mono), dark theme, Analytics |
-| `page.tsx` | Main app: view state, nav handlers, composes sidebar + main content router |
-| `globals.css` | Global styles and Tailwind |
-| `sign-in/[[...sign-in]]/page.tsx` | Clerk sign-in catch-all |
-| `sign-up/[[...sign-up]]/page.tsx` | Clerk sign-up catch-all |
-| `api/spotify/token/route.ts` | Returns Spotify access token for current user (e.g. for Web Playback SDK). |
-| `api/spotify/status/route.ts` | Returns `{ connected }` for Spotify connection status. |
-| `api/spotify/playlists/route.ts` | Proxies Spotify current user playlists (token server-side only). |
+| Path                              | Purpose                                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `layout.tsx`                      | Root layout: ClerkProvider, fonts (Inter, Space Mono), dark theme, Analytics |
+| `page.tsx`                        | Main app: view state, nav handlers, composes sidebar + main content router   |
+| `globals.css`                     | Global styles and Tailwind                                                   |
+| `sign-in/[[...sign-in]]/page.tsx` | Clerk sign-in catch-all                                                      |
+| `sign-up/[[...sign-up]]/page.tsx` | Clerk sign-up catch-all                                                      |
+| `api/spotify/token/route.ts`      | Returns Spotify access token for current user (e.g. for Web Playback SDK).   |
+| `api/spotify/status/route.ts`     | Returns `{ connected }` for Spotify connection status.                       |
+| `api/spotify/playlists/route.ts`  | Proxies Spotify current user playlists (token server-side only).             |
 
 **`page.tsx`** holds the single source of truth for:
 
@@ -68,85 +68,85 @@ Features are split into folders; each folder has one main view component and sma
 
 #### App shell
 
-| Folder / file | Role |
-|---------------|------|
-| `app-sidebar/` | Desktop sidebar |
-| `app-sidebar/app-sidebar.tsx` | Composes logo, nav, user |
-| `app-sidebar/sidebar-logo.tsx` | Sortify logo + tagline |
-| `app-sidebar/sidebar-nav.tsx` | Nav items (uses `lib/nav-config`), active state, counts |
-| `app-sidebar/sidebar-user.tsx` | User avatar + name (Clerk `UserButton`, `useUser`) |
-| `mobile-header/` | Mobile header |
-| `mobile-header/mobile-header.tsx` | Logo, user, hamburger menu and nav (same nav config) |
+| Folder / file                     | Role                                                    |
+| --------------------------------- | ------------------------------------------------------- |
+| `app-sidebar/`                    | Desktop sidebar                                         |
+| `app-sidebar/app-sidebar.tsx`     | Composes logo, nav, user                                |
+| `app-sidebar/sidebar-logo.tsx`    | Sortify logo + tagline                                  |
+| `app-sidebar/sidebar-nav.tsx`     | Nav items (uses `lib/nav-config`), active state, counts |
+| `app-sidebar/sidebar-user.tsx`    | User avatar + name (Clerk `UserButton`, `useUser`)      |
+| `mobile-header/`                  | Mobile header                                           |
+| `mobile-header/mobile-header.tsx` | Logo, user, hamburger menu and nav (same nav config)    |
 
 #### Dashboard
 
-| File | Role |
-|------|------|
-| `dashboard/dashboard-view.tsx` | Entry: stats, breakdown, quick actions, recently added |
-| `dashboard/dashboard-welcome.tsx` | “Your Library Overview” heading + description |
-| `dashboard/stat-card.tsx` | One stat card (icon, value, label) |
-| `dashboard/library-breakdown-row.tsx` | One category row in “Library Breakdown” |
-| `dashboard/dashboard-library-breakdown.tsx` | “Library Breakdown” card (5 categories) |
-| `dashboard/dashboard-quick-actions.tsx` | “Quick Actions” (Auto-Sort, Browse Songs) |
-| `dashboard/dashboard-recently-added.tsx` | “Recently Added” list + rows |
-| `dashboard/dashboard-view-types.ts` | `CategorySummaryItem` type |
+| File                                        | Role                                                   |
+| ------------------------------------------- | ------------------------------------------------------ |
+| `dashboard/dashboard-view.tsx`              | Entry: stats, breakdown, quick actions, recently added |
+| `dashboard/dashboard-welcome.tsx`           | “Your Library Overview” heading + description          |
+| `dashboard/stat-card.tsx`                   | One stat card (icon, value, label)                     |
+| `dashboard/library-breakdown-row.tsx`       | One category row in “Library Breakdown”                |
+| `dashboard/dashboard-library-breakdown.tsx` | “Library Breakdown” card (5 categories)                |
+| `dashboard/dashboard-quick-actions.tsx`     | “Quick Actions” (Auto-Sort, Browse Songs)              |
+| `dashboard/dashboard-recently-added.tsx`    | “Recently Added” list + rows                           |
+| `dashboard/dashboard-view-types.ts`         | `CategorySummaryItem` type                             |
 
 #### Library (song list)
 
-| File | Role |
-|------|------|
-| `song-list/song-list.tsx` | Entry: search/sort state, filter/sort logic, composes bar + list |
-| `song-list/song-search-bar.tsx` | Search input + sort chips (recent, title, artist, year, popularity) |
-| `song-list/song-selection-bar.tsx` | Select all / deselect all + selected count |
-| `song-list/song-list-item.tsx` | One selectable song row (cover, title, meta, grip) |
+| File                               | Role                                                                |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| `song-list/song-list.tsx`          | Entry: search/sort state, filter/sort logic, composes bar + list    |
+| `song-list/song-search-bar.tsx`    | Search input + sort chips (recent, title, artist, year, popularity) |
+| `song-list/song-selection-bar.tsx` | Select all / deselect all + selected count                          |
+| `song-list/song-list-item.tsx`     | One selectable song row (cover, title, meta, grip)                  |
 
 #### Playlist suggestions
 
-| File | Role |
-|------|------|
-| `playlist-suggestions/playlist-suggestions.tsx` | Entry: intro copy, sections per category |
-| `playlist-suggestions/playlist-category-section.tsx` | Category label + grid of suggestion cards |
-| `playlist-suggestions/playlist-suggestion-card.tsx` | One card: playlist info, song preview, Accept / Preview |
+| File                                                 | Role                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------- |
+| `playlist-suggestions/playlist-suggestions.tsx`      | Entry: intro copy, sections per category                |
+| `playlist-suggestions/playlist-category-section.tsx` | Category label + grid of suggestion cards               |
+| `playlist-suggestions/playlist-suggestion-card.tsx`  | One card: playlist info, song preview, Accept / Preview |
 
 #### Playlist detail
 
-| File | Role |
-|------|------|
-| `playlist-detail/playlist-detail.tsx` | Entry: header + active songs + removed section |
-| `playlist-detail/playlist-detail-header.tsx` | Back, playlist meta, Shuffle / Preview / Accept |
-| `playlist-detail/playlist-detail-song-row.tsx` | One song row with remove button |
-| `playlist-detail/removed-songs-section.tsx` | “Removed” list with Restore |
+| File                                           | Role                                            |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `playlist-detail/playlist-detail.tsx`          | Entry: header + active songs + removed section  |
+| `playlist-detail/playlist-detail-header.tsx`   | Back, playlist meta, Shuffle / Preview / Accept |
+| `playlist-detail/playlist-detail-song-row.tsx` | One song row with remove button                 |
+| `playlist-detail/removed-songs-section.tsx`    | “Removed” list with Restore                     |
 
 #### My playlists
 
-| File | Role |
-|------|------|
-| `my-playlists/my-playlists-view.tsx` | Entry: header, category sections or empty state |
-| `my-playlists/empty-playlists-state.tsx` | Empty state + “View Suggestions” CTA |
-| `my-playlists/my-playlist-card.tsx` | One card: cover, song preview, “View all” / menu |
+| File                                     | Role                                             |
+| ---------------------------------------- | ------------------------------------------------ |
+| `my-playlists/my-playlists-view.tsx`     | Entry: header, category sections or empty state  |
+| `my-playlists/empty-playlists-state.tsx` | Empty state + “View Suggestions” CTA             |
+| `my-playlists/my-playlist-card.tsx`      | One card: cover, song preview, “View all” / menu |
 
 #### Shared / reusable
 
-| Folder / file | Role |
-|---------------|------|
-| `song/song-cover.tsx` | Colored cover block + Music icon (sizes: sm, md, lg) |
-| `song/song-row-mini.tsx` | Compact song row for previews (title, optional duration/year) |
-| `playlist/category-badge.tsx` | Category label badge (uses `lib/category-styles`) |
-| `theme-provider.tsx` | Theme provider for app (if used) |
-| `ui/` | Radix-based primitives (button, card, input, dialog, etc.) |
+| Folder / file                 | Role                                                          |
+| ----------------------------- | ------------------------------------------------------------- |
+| `song/song-cover.tsx`         | Colored cover block + Music icon (sizes: sm, md, lg)          |
+| `song/song-row-mini.tsx`      | Compact song row for previews (title, optional duration/year) |
+| `playlist/category-badge.tsx` | Category label badge (uses `lib/category-styles`)             |
+| `theme-provider.tsx`          | Theme provider for app (if used)                              |
+| `ui/`                         | Radix-based primitives (button, card, input, dialog, etc.)    |
 
 ---
 
 ### `lib/`
 
-| File | Purpose |
-|------|---------|
-| `mock-data.ts` | Types: `Song`, `SuggestedPlaylist`, `PlaylistCategory`. Data: `songs`, `suggestedPlaylists`, `categoryLabels`, `categoryDescriptions`. |
-| `nav-config.ts` | `navItems` (id, label, icon) and `NavViewId` for sidebar and mobile nav. |
-| `category-styles.ts` | `categoryIcons`, `categoryIconByKey`, `categoryAccents`, `categoryBadgeStyles` for dashboard and playlist UI. |
-| `utils.ts` | `cn()` (e.g. `clsx` + `tailwind-merge`) for class names. |
-| `spotify-types.ts` | Shared Spotify API types (playlists response, etc.). Safe to import from client. |
-| `spotify-server.ts` | **Server-only.** Gets Spotify access token via Clerk and calls Spotify Web API. Used only in API routes. |
+| File                 | Purpose                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `mock-data.ts`       | Types: `Song`, `SuggestedPlaylist`, `PlaylistCategory`. Data: `songs`, `suggestedPlaylists`, `categoryLabels`, `categoryDescriptions`. |
+| `nav-config.ts`      | `navItems` (id, label, icon) and `NavViewId` for sidebar and mobile nav.                                                               |
+| `category-styles.ts` | `categoryIcons`, `categoryIconByKey`, `categoryAccents`, `categoryBadgeStyles` for dashboard and playlist UI.                          |
+| `utils.ts`           | `cn()` (e.g. `clsx` + `tailwind-merge`) for class names.                                                                               |
+| `spotify-types.ts`   | Shared Spotify API types (playlists response, etc.). Safe to import from client.                                                       |
+| `spotify-server.ts`  | **Server-only.** Gets Spotify access token via Clerk and calls Spotify Web API. Used only in API routes.                               |
 
 ---
 
@@ -159,11 +159,11 @@ Features are split into folders; each folder has one main view component and sma
 
 **API routes**
 
-| Route | Purpose |
-|-------|---------|
-| `GET /api/spotify/status` | Returns `{ connected: true }` or `{ connected: false }`. Use to gate UI (e.g. “Connect Spotify” vs show data). |
-| `GET /api/spotify/playlists` | Proxies Spotify’s current user playlists. Query: `limit`, `offset`. Token is used only on the server. |
-| `GET /api/spotify/token` | Returns `{ accessToken }` for the current user. Use only when the client needs the token (e.g. Web Playback SDK). Prefer proxy routes so the token stays server-side. |
+| Route                        | Purpose                                                                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/spotify/status`    | Returns `{ connected: true }` or `{ connected: false }`. Use to gate UI (e.g. “Connect Spotify” vs show data).                                                        |
+| `GET /api/spotify/playlists` | Proxies Spotify’s current user playlists. Query: `limit`, `offset`. Token is used only on the server.                                                                 |
+| `GET /api/spotify/token`     | Returns `{ accessToken }` for the current user. Use only when the client needs the token (e.g. Web Playback SDK). Prefer proxy routes so the token stays server-side. |
 
 **State management**
 
@@ -205,9 +205,9 @@ Replacing mock data with real Spotify API calls would mean changing `lib/mock-da
 
 ## Scripts
 
-| Command | Description |
-|--------|-------------|
-| `pnpm dev` | Start dev server |
-| `pnpm build` | Production build |
+| Command      | Description             |
+| ------------ | ----------------------- |
+| `pnpm dev`   | Start dev server        |
+| `pnpm build` | Production build        |
 | `pnpm start` | Start production server |
-| `pnpm lint` | Run ESLint |
+| `pnpm lint`  | Run ESLint              |

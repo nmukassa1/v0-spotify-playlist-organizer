@@ -55,3 +55,44 @@ export function groupLikedSongsByYear(
   })
   return entries
 }
+
+/** Decade start for a year (e.g. 2004 → "2000"). Returns "Unknown" if year is unknown. */
+export function getReleaseDecade(saved: SpotifySavedTrack): string {
+  const yearStr = getReleaseYear(saved)
+  if (yearStr === "Unknown") return "Unknown"
+  const y = Number(yearStr)
+  if (!Number.isFinite(y)) return "Unknown"
+  const decadeStart = Math.floor(y / 10) * 10
+  return String(decadeStart)
+}
+
+/** Format decade start as range label (e.g. "2000" → "2000 - 2010"). */
+export function formatDecadeRange(decadeStart: string): string {
+  if (decadeStart === "Unknown") return "Unknown"
+  const start = Number(decadeStart)
+  if (!Number.isFinite(start)) return decadeStart
+  return `${start} - ${start + 10}`
+}
+
+/** Group saved tracks by 10-year release range (decade). Returns entries sorted by decade descending. */
+export function groupLikedSongsByDecade(
+  tracks: SpotifySavedTrack[]
+): { year: string; tracks: SpotifySavedTrack[] }[] {
+  const byDecade = new Map<string, SpotifySavedTrack[]>()
+  for (const t of tracks) {
+    const decadeStart = getReleaseDecade(t)
+    if (!byDecade.has(decadeStart)) byDecade.set(decadeStart, [])
+    byDecade.get(decadeStart)!.push(t)
+  }
+  const entries = Array.from(byDecade.entries()).map(([decadeStart, tracks]) => ({
+    decadeStart,
+    year: formatDecadeRange(decadeStart),
+    tracks,
+  }))
+  entries.sort((a, b) => {
+    if (a.decadeStart === "Unknown") return 1
+    if (b.decadeStart === "Unknown") return -1
+    return Number(b.decadeStart) - Number(a.decadeStart)
+  })
+  return entries.map(({ year, tracks }) => ({ year, tracks }))
+}
