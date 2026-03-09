@@ -119,6 +119,128 @@ export async function getPlaylistTrackIds(
   return { data: ids };
 }
 
+/** Playlist track item from Spotify API */
+interface SpotifyPlaylistTrackItem {
+  added_at?: string;
+  track: {
+    id: string;
+    name: string;
+    duration_ms: number;
+    popularity?: number;
+    artists?: Array<{ id: string; name: string }>;
+    album?: { id: string; name: string; release_date?: string; images?: Array<{ url: string }> };
+  } | null;
+}
+
+/** Playlist with tracks (Get Playlist or Get Playlist Tracks response) */
+interface SpotifyPlaylistTracksChunk {
+  items: SpotifyPlaylistTrackItem[];
+  next: string | null;
+  total: number;
+}
+
+/** Get Playlist response */
+interface SpotifyPlaylistResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  images: Array<{ url: string; height: number | null; width: number | null }>;
+  tracks: SpotifyPlaylistTracksChunk;
+}
+
+/**
+ * Fetch a single playlist with all its tracks (paginated).
+ */
+export async function getSpotifyPlaylistWithTracks(
+  playlistId: string,
+): Promise<
+  | {
+      data: {
+        id: string;
+        name: string;
+        description: string | null;
+        imageUrl: string | null;
+        trackCount: number;
+        tracks: Array<{
+          added_at?: string;
+          track: {
+            id: string;
+            name: string;
+            duration_ms: number;
+            popularity: number;
+            artists: Array<{ id: string; name: string }>;
+            album: { id: string; name: string; release_date?: string; images: Array<{ url: string }> };
+          };
+        }>;
+      };
+    }
+  | { error: string; status: number }
+> {
+  const allTracks: Array<{
+    added_at?: string;
+    track: {
+      id: string;
+      name: string;
+      duration_ms: number;
+      popularity: number;
+      artists: Array<{ id: string; name: string }>;
+      album: { id: string; name: string; release_date?: string; images: Array<{ url: string }> };
+    };
+  }> = [];
+  let playlistMeta: { name: string; description: string | null; imageUrl: string | null } | null = null;
+  let nextUrl: string | null = null;
+
+  const result = await spotifyFetch<SpotifyPlaylistResponse>(`/playlists/${playlistId}`);
+  if ("error" in result) return result;
+
+  const { name, description, images, tracks } = result.data;
+  playlistMeta = { name, description, imageUrl: images?.[0]?.url ?? null };
+  nextUrl = tracks.next;
+
+  const processChunk = (chunk: SpotifyPlaylistTracksChunk) => {
+    for (const item of chunk.items) {
+      if (item.track?.id) {
+        allTracks.push({
+          added_at: item.added_at,
+          track: {
+            id: item.track.id,
+            name: item.track.name,
+            duration_ms: item.track.duration_ms ?? 0,
+            popularity: item.track.popularity ?? 0,
+            artists: item.track.artists ?? [],
+            album: {
+              id: item.track.album?.id ?? "",
+              name: item.track.album?.name ?? "",
+              release_date: item.track.album?.release_date,
+              images: item.track.album?.images ?? [],
+            },
+          },
+        });
+      }
+    }
+  };
+
+  processChunk(tracks);
+
+  while (nextUrl) {
+    const nextResult = await spotifyFetch<SpotifyPlaylistTracksChunk>(nextUrl);
+    if ("error" in nextResult) return nextResult;
+    processChunk(nextResult.data);
+    nextUrl = nextResult.data.next;
+  }
+
+  return {
+    data: {
+      id: playlistId,
+      name: playlistMeta!.name,
+      description: playlistMeta!.description,
+      imageUrl: playlistMeta!.imageUrl,
+      trackCount: allTracks.length,
+      tracks: allTracks,
+    },
+  };
+}
+
 /** Fetch all liked saved tracks (paginated). For refresh/sync use. */
 export async function getAllLikedTracks(): Promise<
   | { data: import("@/lib/spotify-types").SpotifySavedTrack[] }

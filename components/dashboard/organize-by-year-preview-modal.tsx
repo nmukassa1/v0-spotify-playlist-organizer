@@ -100,6 +100,7 @@ export function OrganizeByYearPreviewModal({
     onSuccess: (data) => {
       setCreated(data.created ?? []);
       queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.organizedPlaylists() });
     },
   });
 
@@ -118,6 +119,7 @@ export function OrganizeByYearPreviewModal({
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: spotifyKeys.likedAll() });
       queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.organizedPlaylists() });
       const totalAdded = data.totalAdded ?? 0;
       if (totalAdded > 0 && data.added && Object.keys(data.added).length > 0) {
         const breakdown = Object.entries(data.added)
@@ -141,6 +143,7 @@ export function OrganizeByYearPreviewModal({
       setCreated(null);
       queryClient.invalidateQueries({ queryKey: spotifyKeys.likedAll() });
       queryClient.invalidateQueries({ queryKey: spotifyKeys.releasedPlaylists() });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.organizedPlaylists() });
       queryClient.invalidateQueries({ queryKey: spotifyKeys.playlists(50, 0) });
       refetchLiked();
       const count = data.deleted ?? 0;

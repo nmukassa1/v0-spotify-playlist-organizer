@@ -1,22 +1,21 @@
 "use client"
 
-import { useSpotifyLikedSongs } from "@/hooks/use-spotify"
-import { songs } from "@/lib/mock-data"
-import { AppStateProvider, useAppState } from "@/contexts/app-state-context"
+import { useSpotifyLikedSongs, useOrganizedPlaylistsCount } from "@/hooks/use-spotify"
+import { AppStateProvider } from "@/contexts/app-state-context"
 import { AppSidebar } from "@/components/app-sidebar/app-sidebar"
 import { MobileHeader } from "@/components/mobile-header/mobile-header"
 
 function AppShell({ children }: { children: React.ReactNode }) {
-  const { acceptedPlaylists } = useAppState()
   const { total } = useSpotifyLikedSongs(1, 0)
-  const unsortedCount = total ?? songs.length
+  const { count: playlistCount } = useOrganizedPlaylistsCount()
+  const unsortedCount = total ?? 0
   return (
     <div className="flex h-dvh flex-col bg-background">
       <MobileHeader />
       <div className="flex flex-1 overflow-scroll">
         <AppSidebar
           unsortedCount={unsortedCount}
-          playlistCount={acceptedPlaylists.size}
+          playlistCount={playlistCount}
         />
         <main className="flex-1 overflow-y-auto">
           {children}

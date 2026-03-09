@@ -15,6 +15,31 @@ const STATUS_KEY = "/api/spotify/status";
 const PLAYLISTS_KEY = "/api/spotify/playlists";
 const LIKED_KEY = "/api/spotify/liked";
 const RELEASED_PLAYLISTS_KEY = "/api/spotify/released-playlists";
+const ORGANIZED_PLAYLISTS_KEY = "/api/spotify/organized-playlists";
+
+export interface SpotifyPlaylistWithTracks {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  trackCount: number;
+  tracks: Array<{
+    added_at?: string;
+    track: {
+      id: string;
+      name: string;
+      duration_ms: number;
+      popularity: number;
+      artists: Array<{ id: string; name: string }>;
+      album: {
+        id: string;
+        name: string;
+        release_date?: string;
+        images: Array<{ url: string }>;
+      };
+    };
+  }>;
+}
 
 /** Centralized query keys for cache invalidation */
 export const spotifyKeys = {
@@ -25,7 +50,9 @@ export const spotifyKeys = {
   likedAll: () => [...spotifyKeys.all, "liked-all"] as const,
   playlists: (limit: number, offset: number) =>
     [...spotifyKeys.all, "playlists", limit, offset] as const,
+  playlist: (id: string) => [...spotifyKeys.all, "playlist", id] as const,
   releasedPlaylists: () => [...spotifyKeys.all, "released-playlists"] as const,
+  organizedPlaylists: () => [...spotifyKeys.all, "organized-playlists"] as const,
 };
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -90,6 +117,34 @@ export function useSpotifyLikedSongs(
 }
 
 /**
+ * Fetches a single playlist with all its tracks by Spotify playlist ID.
+ */
+export function useSpotifyPlaylist(
+  playlistId: string | null,
+  options?: Omit<
+    UseQueryOptions<SpotifyPlaylistWithTracks, Error>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery({
+    queryKey: spotifyKeys.playlist(playlistId ?? ""),
+    queryFn: () =>
+      fetcher<SpotifyPlaylistWithTracks>(
+        `${PLAYLISTS_KEY}/${playlistId}`,
+      ),
+    enabled: !!playlistId,
+    refetchOnWindowFocus: true,
+    ...options,
+  });
+  return {
+    playlist: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error?.message ?? null,
+    mutate: query.refetch,
+  };
+}
+
+/**
  * Fetches the current user's Spotify playlists. Token is used only on the server (proxied via API).
  */
 export function useSpotifyPlaylists(
@@ -140,6 +195,47 @@ export interface ReleasedPlaylistsData {
   playlists: Array<{ id: string; name: string }>;
   count: number;
   range: string;
+}
+
+/** Response from organized-playlists API */
+export interface OrganizedPlaylistsData {
+  count: number;
+  playlists: import("@/lib/spotify-types").SpotifyPlaylistItem[];
+}
+
+/**
+ * Fetches organized playlists (Released: + Artist Focus:) and their count.
+ */
+export function useOrganizedPlaylists(
+  options?: Omit<
+    UseQueryOptions<OrganizedPlaylistsData, Error>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery({
+    queryKey: spotifyKeys.organizedPlaylists(),
+    queryFn: () => fetcher<OrganizedPlaylistsData>(ORGANIZED_PLAYLISTS_KEY),
+    refetchOnWindowFocus: true,
+    ...options,
+  });
+  return {
+    count: query.data?.count ?? 0,
+    playlists: query.data?.playlists ?? [],
+    isLoading: query.isLoading,
+    error: query.error?.message ?? null,
+    mutate: query.refetch,
+  };
+}
+
+/** Alias for useOrganizedPlaylists when only count is needed */
+export function useOrganizedPlaylistsCount(
+  options?: Omit<
+    UseQueryOptions<OrganizedPlaylistsData, Error>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const result = useOrganizedPlaylists(options);
+  return { count: result.count, isLoading: result.isLoading, error: result.error, mutate: result.mutate };
 }
 
 /**
