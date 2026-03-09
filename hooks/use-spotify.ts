@@ -44,7 +44,7 @@ export function useSpotifyStatus(
   options?: Omit<
     UseQueryOptions<{ connected: boolean }, Error>,
     "queryKey" | "queryFn"
-  >
+  >,
 ) {
   const query = useQuery({
     queryKey: spotifyKeys.status(),
@@ -63,12 +63,19 @@ export function useSpotifyStatus(
 /**
  * Fetches the current user's Liked Songs (saved tracks). Token is used only on the server.
  */
-export function useSpotifyLikedSongs(limit = 50, offset = 0, options?: Omit<UseQueryOptions<SpotifySavedTracksResponse, Error>, "queryKey" | "queryFn">) {
+export function useSpotifyLikedSongs(
+  limit = 50,
+  offset = 0,
+  options?: Omit<
+    UseQueryOptions<SpotifySavedTracksResponse, Error>,
+    "queryKey" | "queryFn"
+  >,
+) {
   const query = useQuery({
     queryKey: spotifyKeys.liked(limit, offset),
     queryFn: () =>
       fetcher<SpotifySavedTracksResponse>(
-        `${LIKED_KEY}?limit=${limit}&offset=${offset}`
+        `${LIKED_KEY}?limit=${limit}&offset=${offset}`,
       ),
     refetchOnWindowFocus: true,
     ...options,
@@ -88,13 +95,16 @@ export function useSpotifyLikedSongs(limit = 50, offset = 0, options?: Omit<UseQ
 export function useSpotifyPlaylists(
   limit = 50,
   offset = 0,
-  options?: Omit<UseQueryOptions<SpotifyPlaylistsResponse, Error>, "queryKey" | "queryFn">
+  options?: Omit<
+    UseQueryOptions<SpotifyPlaylistsResponse, Error>,
+    "queryKey" | "queryFn"
+  >,
 ) {
   const query = useQuery({
     queryKey: spotifyKeys.playlists(limit, offset),
     queryFn: () =>
       fetcher<SpotifyPlaylistsResponse>(
-        `${PLAYLISTS_KEY}?limit=${limit}&offset=${offset}`
+        `${PLAYLISTS_KEY}?limit=${limit}&offset=${offset}`,
       ),
     refetchOnWindowFocus: true,
     ...options,
@@ -136,7 +146,10 @@ export interface ReleasedPlaylistsData {
  * Fetches playlists whose name starts with "Released:" (decade ranges) and the computed year range.
  */
 export function useReleasedPlaylists(
-  options?: Omit<UseQueryOptions<ReleasedPlaylistsData, Error>, "queryKey" | "queryFn">
+  options?: Omit<
+    UseQueryOptions<ReleasedPlaylistsData, Error>,
+    "queryKey" | "queryFn"
+  >,
 ) {
   const query = useQuery({
     queryKey: spotifyKeys.releasedPlaylists(),
