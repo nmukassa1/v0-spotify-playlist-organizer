@@ -96,3 +96,48 @@ export function groupLikedSongsByDecade(
   })
   return entries.map(({ year, tracks }) => ({ year, tracks }))
 }
+
+const ARTIST_FOCUS_BUCKETS = [
+  {
+    id: "solo" as const,
+    name: "Solo tracks",
+    description: "Songs where a single primary artist is credited.",
+    hasFeatures: false,
+  },
+  {
+    id: "with-features" as const,
+    name: "With features",
+    description: "Songs with multiple credited artists (collabs or features).",
+    hasFeatures: true,
+  },
+] as const
+
+export type ArtistFocusBucketId = (typeof ARTIST_FOCUS_BUCKETS)[number]["id"]
+
+export interface ArtistFocusBucket {
+  id: ArtistFocusBucketId
+  name: string
+  description: string
+  tracks: SpotifySavedTrack[]
+}
+
+/** Group saved tracks into Artist Focus buckets: solo vs with features. */
+export function groupLikedSongsByArtistFocus(tracks: SpotifySavedTrack[]): ArtistFocusBucket[] {
+  const buckets: ArtistFocusBucket[] = ARTIST_FOCUS_BUCKETS.map((bucket) => ({
+    id: bucket.id,
+    name: bucket.name,
+    description: bucket.description,
+    tracks: [],
+  }))
+
+  for (const saved of tracks) {
+    const artistCount = saved.track?.artists?.length ?? 0
+    const hasFeatures = artistCount > 1
+    const bucket = buckets.find((b) => (b.id === "with-features" ? hasFeatures : !hasFeatures))
+    if (bucket) {
+      bucket.tracks.push(saved)
+    }
+  }
+
+  return buckets
+}

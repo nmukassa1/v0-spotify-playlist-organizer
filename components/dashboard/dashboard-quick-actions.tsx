@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { OrganizeByYearPreviewModal } from "@/components/dashboard/organize-by-year-preview-modal";
+import { OrganizeByArtistFocusPreviewModal } from "@/components/dashboard/organize-by-artist-focus-preview-modal";
 
 interface QuickActionItemProps {
   title: string;
@@ -78,6 +79,7 @@ export function DashboardQuickActions({
 }: DashboardQuickActionsProps) {
   const [autoSortOpen, setAutoSortOpen] = useState(false);
   const [yearPreviewOpen, setYearPreviewOpen] = useState(false);
+  const [artistFocusPreviewOpen, setArtistFocusPreviewOpen] = useState(false);
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
@@ -125,18 +127,18 @@ export function DashboardQuickActions({
                 }}
               >
                 <Calendar className="h-4 w-4 shrink-0" />
-                <span>By year</span>
+                <span>By decade</span>
               </Button>
               <Button
                 variant="outline"
                 className="h-auto justify-start gap-3 py-3 cursor-pointer"
                 onClick={() => {
-                  /* TODO: organize by popularity */
                   setAutoSortOpen(false);
+                  setArtistFocusPreviewOpen(true);
                 }}
               >
                 <TrendingUp className="h-4 w-4 shrink-0" />
-                <span>By popularity</span>
+                <span>Artist focus (features vs solo)</span>
               </Button>
               <Button
                 variant="outline"
@@ -166,6 +168,10 @@ export function DashboardQuickActions({
         <OrganizeByYearPreviewModal
           open={yearPreviewOpen}
           onOpenChange={setYearPreviewOpen}
+        />
+        <OrganizeByArtistFocusPreviewModal
+          open={artistFocusPreviewOpen}
+          onOpenChange={setArtistFocusPreviewOpen}
         />
         <QuickActionItem
           title="Browse All Songs"
