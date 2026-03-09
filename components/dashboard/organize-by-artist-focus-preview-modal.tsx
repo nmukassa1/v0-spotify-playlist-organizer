@@ -117,8 +117,34 @@ export function OrganizeByArtistFocusPreviewModal({
   });
 
   const creating = createPlaylistsMutation.isPending;
-  const mutationError = createPlaylistsMutation.error?.message ?? null;
-  const displayError = error ?? mutationError;
+  const createError = createPlaylistsMutation.error?.message ?? null;
+
+  const deletePlaylistsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/spotify/delete-artist-focus-playlists", {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data.error as string) || res.statusText || "Failed to delete Artist Focus playlists");
+      }
+      return data as { deleted: number };
+    },
+    onSuccess: (data) => {
+      setCreated(null);
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.playlists(50, 0) });
+      const count = data.deleted ?? 0;
+      if (count > 0) {
+        alert(
+          `Deleted ${count} playlist${count !== 1 ? "s" : ""} starting with "Artist Focus:".`,
+        );
+      }
+    },
+  });
+
+  const deleting = deletePlaylistsMutation.isPending;
+  const deleteError = deletePlaylistsMutation.error?.message ?? null;
+  const displayError = error ?? createError ?? deleteError;
 
   function handleCreatePlaylists() {
     if (!buckets || buckets.length === 0) return;
@@ -131,6 +157,10 @@ export function OrganizeByArtistFocusPreviewModal({
       }));
     if (playlists.length === 0) return;
     createPlaylistsMutation.mutate({ playlists });
+  }
+
+  function handleDeleteArtistFocusPlaylists() {
+    deletePlaylistsMutation.mutate();
   }
 
   return (
@@ -223,6 +253,24 @@ export function OrganizeByArtistFocusPreviewModal({
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleDeleteArtistFocusPlaylists}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 shrink-0" />
+                    Delete all playlists starting with &quot;Artist Focus:&quot; (temporary)
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}
@@ -255,6 +303,24 @@ export function OrganizeByArtistFocusPreviewModal({
             <p className="text-xs text-muted-foreground">
               Open in Spotify to listen. You can close this and run again to create more playlists.
             </p>
+            <Button
+              variant="outline"
+              className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleDeleteArtistFocusPlaylists}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 shrink-0" />
+                  Delete all playlists starting with &quot;Artist Focus:&quot; (temporary)
+                </>
+              )}
+            </Button>
           </div>
         )}
 
