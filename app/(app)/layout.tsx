@@ -1,14 +1,16 @@
 "use client"
 
-import { useSpotifyLikedSongs, useOrganizedPlaylistsCount } from "@/hooks/use-spotify"
+import { useSpotifyLikedSongs, useSpotifyPlaylists } from "@/hooks/use-spotify"
 import { AppStateProvider } from "@/contexts/app-state-context"
 import { AppSidebar } from "@/components/app-sidebar/app-sidebar"
 import { MobileHeader } from "@/components/mobile-header/mobile-header"
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const { total } = useSpotifyLikedSongs(1, 0)
-  const { count: playlistCount } = useOrganizedPlaylistsCount()
+  const { total: playlistTotal } = useSpotifyPlaylists(1, 0)
   const unsortedCount = total ?? 0
+  const playlistCount = playlistTotal ?? 0
+
   return (
     <div className="flex h-dvh flex-col bg-background">
       <MobileHeader />

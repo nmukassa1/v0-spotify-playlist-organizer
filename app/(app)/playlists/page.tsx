@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useOrganizedPlaylists } from "@/hooks/use-spotify";
+import { useSpotifyPlaylists } from "@/hooks/use-spotify";
 import { MyPlaylistsView } from "@/components/my-playlists/my-playlists-view";
 
 export default function PlaylistsPage() {
   const router = useRouter();
-  const { playlists, isLoading } = useOrganizedPlaylists();
+  const { playlists, isLoading } = useSpotifyPlaylists(50, 0);
 
   return (
     <MyPlaylistsView

@@ -15,7 +15,6 @@ const STATUS_KEY = "/api/spotify/status";
 const PLAYLISTS_KEY = "/api/spotify/playlists";
 const LIKED_KEY = "/api/spotify/liked";
 const RELEASED_PLAYLISTS_KEY = "/api/spotify/released-playlists";
-const ORGANIZED_PLAYLISTS_KEY = "/api/spotify/organized-playlists";
 
 export interface SpotifyPlaylistWithTracks {
   id: string;
@@ -52,7 +51,6 @@ export const spotifyKeys = {
     [...spotifyKeys.all, "playlists", limit, offset] as const,
   playlist: (id: string) => [...spotifyKeys.all, "playlist", id] as const,
   releasedPlaylists: () => [...spotifyKeys.all, "released-playlists"] as const,
-  organizedPlaylists: () => [...spotifyKeys.all, "organized-playlists"] as const,
 };
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -198,46 +196,6 @@ export interface ReleasedPlaylistsData {
 }
 
 /** Response from organized-playlists API */
-export interface OrganizedPlaylistsData {
-  count: number;
-  playlists: import("@/lib/spotify-types").SpotifyPlaylistItem[];
-}
-
-/**
- * Fetches organized playlists (Released: + Artist Focus:) and their count.
- */
-export function useOrganizedPlaylists(
-  options?: Omit<
-    UseQueryOptions<OrganizedPlaylistsData, Error>,
-    "queryKey" | "queryFn"
-  >,
-) {
-  const query = useQuery({
-    queryKey: spotifyKeys.organizedPlaylists(),
-    queryFn: () => fetcher<OrganizedPlaylistsData>(ORGANIZED_PLAYLISTS_KEY),
-    refetchOnWindowFocus: true,
-    ...options,
-  });
-  return {
-    count: query.data?.count ?? 0,
-    playlists: query.data?.playlists ?? [],
-    isLoading: query.isLoading,
-    error: query.error?.message ?? null,
-    mutate: query.refetch,
-  };
-}
-
-/** Alias for useOrganizedPlaylists when only count is needed */
-export function useOrganizedPlaylistsCount(
-  options?: Omit<
-    UseQueryOptions<OrganizedPlaylistsData, Error>,
-    "queryKey" | "queryFn"
-  >,
-) {
-  const result = useOrganizedPlaylists(options);
-  return { count: result.count, isLoading: result.isLoading, error: result.error, mutate: result.mutate };
-}
-
 /**
  * Fetches playlists whose name starts with "Released:" (decade ranges) and the computed year range.
  */
