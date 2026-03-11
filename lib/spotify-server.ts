@@ -320,6 +320,40 @@ export async function createSpotifyPlaylist(body: {
   });
 }
 
+/**
+ * Upload a custom cover image for a playlist.
+ * Uses Spotify API: PUT https://api.spotify.com/v1/playlists/{playlist_id}/images
+ * Body must be base64-encoded JPEG only, no data URI prefix, max 256 KB.
+ * Requires scopes: ugc-image-upload, playlist-modify-public or playlist-modify-private.
+ */
+export async function uploadPlaylistCover(
+  playlistId: string,
+  base64Jpeg: string,
+): Promise<{ ok: true } | { error: string; status: number }> {
+  const token = await getSpotifyAccessToken();
+  if (!token) {
+    return { error: "Not connected to Spotify", status: 401 };
+  }
+
+  const cleanBase64 = base64Jpeg.replace(/^data:image\/\w+;base64,/, "").replace(/\s/g, "");
+  const url = `${SPOTIFY_API_BASE}/playlists/${playlistId}/images`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "image/jpeg",
+    },
+    body: cleanBase64,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return { error: text || res.statusText, status: res.status };
+  }
+
+  return { ok: true };
+}
+
 /** Add tracks to a playlist. URIs must be "spotify:track:id". Max 100 per request. Requires Spotify access token. */
 export async function addTracksToPlaylist(
   playlistId: string,
