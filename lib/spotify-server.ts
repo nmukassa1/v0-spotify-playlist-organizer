@@ -209,12 +209,15 @@ export async function getSpotifyPlaylistWithTracks(playlistId: string): Promise<
   let nextUrl: string | null = null;
 
   // First fetch the playlist itself (includes initial page of tracks + metadata)
-  const result = await spotifyFetch<SpotifyPlaylistResponse>(`/playlists/${playlistId}`);
+  const result = await spotifyFetch<SpotifyPlaylistResponse>(
+    `/playlists/${playlistId}`,
+  );
   if ("error" in result) return result;
 
   const { name, description, images } = result.data;
   const firstChunk: SpotifyPlaylistTracksChunk | undefined =
-    result.data.tracks ?? (result.data.items as SpotifyPlaylistTracksChunk | undefined);
+    result.data.tracks ??
+    (result.data.items as SpotifyPlaylistTracksChunk | undefined);
 
   if (!firstChunk) {
     return { error: "Playlist tracks not found in response", status: 500 };
