@@ -1,65 +1,78 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import type { SuggestedPlaylist, Song, PlaylistCategory } from "@/lib/mock-data"
-import { CategoryBadge } from "@/components/playlist/category-badge"
-import { EmptyPlaylistsState } from "./empty-playlists-state"
-import { MyPlaylistCard } from "./my-playlist-card"
+import type { SpotifyPlaylistItem } from "@/lib/spotify-types";
+import { CreatePlaylistButton } from "./create-playlist-button";
+import { EmptyPlaylistsState } from "./empty-playlists-state";
+import { SpotifyPlaylistCard } from "./spotify-playlist-card";
 
 interface MyPlaylistsViewProps {
-  playlists: SuggestedPlaylist[]
-  songs: Song[]
-  acceptedPlaylists: Set<string>
-  onViewPlaylist: (playlistId: string) => void
-  onViewSuggestions?: () => void
+  playlists: SpotifyPlaylistItem[];
+  isLoading: boolean;
+  onViewPlaylist: (id: string) => void;
 }
 
 export function MyPlaylistsView({
   playlists,
-  songs,
-  acceptedPlaylists,
+  isLoading,
   onViewPlaylist,
-  onViewSuggestions,
 }: MyPlaylistsViewProps) {
-  const accepted = playlists.filter((p) => acceptedPlaylists.has(p.id))
+  const total = playlists.length;
+  const headerAction = <CreatePlaylistButton onCreated={onViewPlaylist} />;
 
-  if (accepted.length === 0) {
+  if (isLoading) {
     return (
-      <EmptyPlaylistsState onViewSuggestions={onViewSuggestions ?? (() => {})} />
-    )
+      <div className="flex flex-col gap-6 p-4 sm:p-6 overflow-y-auto">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">My Playlists</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Loading your playlists…
+            </p>
+          </div>
+          {headerAction}
+        </div>
+      </div>
+    );
   }
 
-  const categories = Array.from(new Set(accepted.map((p) => p.category))) as PlaylistCategory[]
+  if (total === 0) {
+    return (
+      <div className="flex flex-col gap-6 p-4 sm:p-6 overflow-y-auto">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">My Playlists</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              0 playlists in your Spotify library
+            </p>
+          </div>
+          {headerAction}
+        </div>
+        <EmptyPlaylistsState />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 overflow-y-auto">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">My Playlists</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {accepted.length} playlist{accepted.length !== 1 ? "s" : ""} created from suggestions
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">My Playlists</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {total} playlist{total !== 1 ? "s" : ""} in your Spotify library
+          </p>
+        </div>
+        {headerAction}
       </div>
 
-      {categories.map((category) => {
-        const catPlaylists = accepted.filter((p) => p.category === category)
-        return (
-          <div key={category}>
-            <div className="flex items-center gap-2 mb-3">
-              <CategoryBadge category={category} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {catPlaylists.map((playlist) => (
-                <MyPlaylistCard
-                  key={playlist.id}
-                  playlist={playlist}
-                  songs={songs}
-                  onView={() => onViewPlaylist(playlist.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {playlists.map((playlist) => (
+          <SpotifyPlaylistCard
+            key={playlist.id}
+            playlist={playlist}
+            onView={() => onViewPlaylist(playlist.id)}
+          />
+        ))}
+      </div>
     </div>
-  )
+  );
 }

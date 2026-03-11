@@ -1,9 +1,8 @@
-import { Home, Library, Sparkles, ListMusic } from "lucide-react"
+import { Home, Library, ListMusic } from "lucide-react"
 
 export const navItems = [
   { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
   { id: "library", label: "Liked Songs", icon: Library, href: "/library" },
-  { id: "suggestions", label: "Organize", icon: Sparkles, href: "/suggestions" },
   { id: "playlists", label: "My Playlists", icon: ListMusic, href: "/playlists" },
 ] as const
 

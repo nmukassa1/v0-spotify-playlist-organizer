@@ -16,6 +16,30 @@ const PLAYLISTS_KEY = "/api/spotify/playlists";
 const LIKED_KEY = "/api/spotify/liked";
 const RELEASED_PLAYLISTS_KEY = "/api/spotify/released-playlists";
 
+export interface SpotifyPlaylistWithTracks {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  trackCount: number;
+  tracks: Array<{
+    added_at?: string;
+    track: {
+      id: string;
+      name: string;
+      duration_ms: number;
+      popularity: number;
+      artists: Array<{ id: string; name: string }>;
+      album: {
+        id: string;
+        name: string;
+        release_date?: string;
+        images: Array<{ url: string }>;
+      };
+    };
+  }>;
+}
+
 /** Centralized query keys for cache invalidation */
 export const spotifyKeys = {
   all: ["spotify"] as const,
@@ -25,6 +49,7 @@ export const spotifyKeys = {
   likedAll: () => [...spotifyKeys.all, "liked-all"] as const,
   playlists: (limit: number, offset: number) =>
     [...spotifyKeys.all, "playlists", limit, offset] as const,
+  playlist: (id: string) => [...spotifyKeys.all, "playlist", id] as const,
   releasedPlaylists: () => [...spotifyKeys.all, "released-playlists"] as const,
 };
 
@@ -90,6 +115,34 @@ export function useSpotifyLikedSongs(
 }
 
 /**
+ * Fetches a single playlist with all its tracks by Spotify playlist ID.
+ */
+export function useSpotifyPlaylist(
+  playlistId: string | null,
+  options?: Omit<
+    UseQueryOptions<SpotifyPlaylistWithTracks, Error>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery({
+    queryKey: spotifyKeys.playlist(playlistId ?? ""),
+    queryFn: () =>
+      fetcher<SpotifyPlaylistWithTracks>(
+        `${PLAYLISTS_KEY}/${playlistId}`,
+      ),
+    enabled: !!playlistId,
+    refetchOnWindowFocus: true,
+    ...options,
+  });
+  return {
+    playlist: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error?.message ?? null,
+    mutate: query.refetch,
+  };
+}
+
+/**
  * Fetches the current user's Spotify playlists. Token is used only on the server (proxied via API).
  */
 export function useSpotifyPlaylists(
@@ -142,6 +195,7 @@ export interface ReleasedPlaylistsData {
   range: string;
 }
 
+/** Response from organized-playlists API */
 /**
  * Fetches playlists whose name starts with "Released:" (decade ranges) and the computed year range.
  */
