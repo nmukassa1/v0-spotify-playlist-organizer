@@ -128,7 +128,12 @@ interface SpotifyPlaylistTrackItem {
     duration_ms: number;
     popularity?: number;
     artists?: Array<{ id: string; name: string }>;
-    album?: { id: string; name: string; release_date?: string; images?: Array<{ url: string }> };
+    album?: {
+      id: string;
+      name: string;
+      release_date?: string;
+      images?: Array<{ url: string }>;
+    };
   } | null;
 }
 
@@ -139,21 +144,20 @@ interface SpotifyPlaylistTracksChunk {
   total: number;
 }
 
-/** Get Playlist response */
+/** Get Playlist response (we support both `tracks` and `items` for robustness) */
 interface SpotifyPlaylistResponse {
   id: string;
   name: string;
   description: string | null;
   images: Array<{ url: string; height: number | null; width: number | null }>;
-  tracks: SpotifyPlaylistTracksChunk;
+  tracks?: SpotifyPlaylistTracksChunk;
+  items?: SpotifyPlaylistTracksChunk;
 }
 
 /**
  * Fetch a single playlist with all its tracks (paginated).
  */
-export async function getSpotifyPlaylistWithTracks(
-  playlistId: string,
-): Promise<
+export async function getSpotifyPlaylistWithTracks(playlistId: string): Promise<
   | {
       data: {
         id: string;
@@ -169,7 +173,12 @@ export async function getSpotifyPlaylistWithTracks(
             duration_ms: number;
             popularity: number;
             artists: Array<{ id: string; name: string }>;
-            album: { id: string; name: string; release_date?: string; images: Array<{ url: string }> };
+            album: {
+              id: string;
+              name: string;
+              release_date?: string;
+              images: Array<{ url: string }>;
+            };
           };
         }>;
       };
@@ -184,18 +193,35 @@ export async function getSpotifyPlaylistWithTracks(
       duration_ms: number;
       popularity: number;
       artists: Array<{ id: string; name: string }>;
-      album: { id: string; name: string; release_date?: string; images: Array<{ url: string }> };
+      album: {
+        id: string;
+        name: string;
+        release_date?: string;
+        images: Array<{ url: string }>;
+      };
     };
   }> = [];
-  let playlistMeta: { name: string; description: string | null; imageUrl: string | null } | null = null;
+  let playlistMeta: {
+    name: string;
+    description: string | null;
+    imageUrl: string | null;
+  } | null = null;
   let nextUrl: string | null = null;
 
+  // First fetch the playlist itself (includes initial page of tracks + metadata)
   const result = await spotifyFetch<SpotifyPlaylistResponse>(`/playlists/${playlistId}`);
   if ("error" in result) return result;
 
-  const { name, description, images, tracks } = result.data;
+  const { name, description, images } = result.data;
+  const firstChunk: SpotifyPlaylistTracksChunk | undefined =
+    result.data.tracks ?? (result.data.items as SpotifyPlaylistTracksChunk | undefined);
+
+  if (!firstChunk) {
+    return { error: "Playlist tracks not found in response", status: 500 };
+  }
+
   playlistMeta = { name, description, imageUrl: images?.[0]?.url ?? null };
-  nextUrl = tracks.next;
+  nextUrl = firstChunk.next;
 
   const processChunk = (chunk: SpotifyPlaylistTracksChunk) => {
     for (const item of chunk.items) {
@@ -220,7 +246,7 @@ export async function getSpotifyPlaylistWithTracks(
     }
   };
 
-  processChunk(tracks);
+  processChunk(firstChunk);
 
   while (nextUrl) {
     const nextResult = await spotifyFetch<SpotifyPlaylistTracksChunk>(nextUrl);

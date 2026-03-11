@@ -1,25 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { SpotifyPlaylistWithTracks } from "@/hooks/use-spotify";
-import { SongCover } from "@/components/song/song-cover";
+import type { SpotifySavedTrack } from "@/lib/spotify-types";
+import type { Song } from "@/lib/mock-data";
+import { mapSpotifySavedTrackToSong } from "@/lib/spotify-mappers";
+import { SongListItem } from "@/components/song-list/song-list-item";
 
 interface SpotifyPlaylistDetailProps {
   playlist: SpotifyPlaylistWithTracks;
   onBack: () => void;
 }
 
-function formatDuration(ms: number): string {
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function formatTotalDuration(tracks: SpotifyPlaylistWithTracks["tracks"]): string {
+function formatTotalDuration(
+  tracks: SpotifyPlaylistWithTracks["tracks"],
+): string {
   const totalMs = tracks.reduce((sum, { track }) => sum + track.duration_ms, 0);
   const m = Math.floor(totalMs / 60000);
   const s = Math.floor((totalMs % 60000) / 1000);
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function mapPlaylistTrackToSong(
+  item: SpotifyPlaylistWithTracks["tracks"][number],
+): Song {
+  const saved: SpotifySavedTrack = {
+    added_at: item.added_at ?? "",
+    track: item.track,
+  } as SpotifySavedTrack;
+  return mapSpotifySavedTrackToSong(saved);
 }
 
 export function SpotifyPlaylistDetail({
@@ -27,6 +37,19 @@ export function SpotifyPlaylistDetail({
   onBack,
 }: SpotifyPlaylistDetailProps) {
   const totalDuration = formatTotalDuration(playlist.tracks);
+  const songs = playlist.tracks.map(mapPlaylistTrackToSong);
+  const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
+
+  console.log("Playlist", playlist);
+
+  function handleToggleSong(songId: string) {
+    setSelectedSongs((prev) => {
+      const next = new Set(prev);
+      if (next.has(songId)) next.delete(songId);
+      else next.add(songId);
+      return next;
+    });
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -72,43 +95,15 @@ export function SpotifyPlaylistDetail({
 
       <div className="flex-1 overflow-y-auto">
         <div className="divide-y divide-border/50">
-          {playlist.tracks.map(({ track }, index) => {
-            const artists = track.artists.map((a) => a.name).join(", ");
-            const imageUrl = track.album?.images?.[0]?.url;
-            return (
-              <div
-                key={track.id}
-                className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-secondary/30 transition-colors"
-              >
-                <span className="w-6 text-center text-xs font-mono text-muted-foreground/50">
-                  {index + 1}
-                </span>
-                <SongCover
-                  size="lg"
-                  colorClass="bg-muted"
-                  imageUrl={imageUrl}
-                  className="rounded-md"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {track.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {artists}
-                    {track.album?.name ? ` · ${track.album.name}` : ""}
-                  </p>
-                </div>
-                {track.album?.release_date && (
-                  <span className="hidden sm:block rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {track.album.release_date.slice(0, 4)}
-                  </span>
-                )}
-                <span className="text-xs font-mono text-muted-foreground/50">
-                  {formatDuration(track.duration_ms)}
-                </span>
-              </div>
-            );
-          })}
+          {songs.map((song, index) => (
+            <SongListItem
+              key={song.id}
+              song={song}
+              index={index}
+              isSelected={selectedSongs.has(song.id)}
+              onToggle={() => handleToggleSong(song.id)}
+            />
+          ))}
         </div>
       </div>
     </div>
