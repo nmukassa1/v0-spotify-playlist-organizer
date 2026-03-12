@@ -9,7 +9,7 @@ export interface SpotifyPlaylistItem {
   name: string;
   description: string | null;
   public: boolean;
-  tracks: { href: string; total: number };
+  items: { href: string; total: number };
   images: Array<{ url: string; height: number | null; width: number | null }>;
   owner: { display_name?: string; id: string };
 }

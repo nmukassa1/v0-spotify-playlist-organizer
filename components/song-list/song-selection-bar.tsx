@@ -8,6 +8,7 @@ interface SongSelectionBarProps {
   selectedCount: number
   onSelectAll: () => void
   onDeselectAll: () => void
+  onAddToPlaylist?: () => void
 }
 
 export function SongSelectionBar({
@@ -15,6 +16,7 @@ export function SongSelectionBar({
   selectedCount,
   onSelectAll,
   onDeselectAll,
+  onAddToPlaylist,
 }: SongSelectionBarProps) {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-secondary/30">
@@ -32,9 +34,19 @@ export function SongSelectionBar({
         </div>
         {allSelected ? "Deselect all" : "Select all"}
       </button>
-      {selectedCount > 0 && (
-        <span className="text-xs font-mono text-primary">{selectedCount} selected</span>
-      )}
+      <div className="flex items-center gap-3">
+        {selectedCount > 0 && (
+          <span className="text-xs font-mono text-primary">{selectedCount} selected</span>
+        )}
+        <button
+          type="button"
+          onClick={onAddToPlaylist}
+          disabled={!onAddToPlaylist || selectedCount === 0}
+          className="inline-flex items-center rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Add To Playlist
+        </button>
+      </div>
     </div>
   )
 }

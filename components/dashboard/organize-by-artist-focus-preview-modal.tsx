@@ -113,6 +113,7 @@ export function OrganizeByArtistFocusPreviewModal({
     onSuccess: (data) => {
       setCreated(data.created ?? []);
       queryClient.invalidateQueries({ queryKey: spotifyKeys.playlists(50, 0) });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.organizedPlaylists() });
     },
   });
 
@@ -133,6 +134,7 @@ export function OrganizeByArtistFocusPreviewModal({
     onSuccess: (data) => {
       setCreated(null);
       queryClient.invalidateQueries({ queryKey: spotifyKeys.playlists(50, 0) });
+      queryClient.invalidateQueries({ queryKey: spotifyKeys.organizedPlaylists() });
       const count = data.deleted ?? 0;
       if (count > 0) {
         alert(

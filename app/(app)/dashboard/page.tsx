@@ -1,24 +1,20 @@
-"use client"
+"use client";
 
-import { useSpotifyLikedSongs, useReleasedPlaylists } from "@/hooks/use-spotify"
-import { mapSpotifySavedTracksToSongs } from "@/lib/spotify-mappers"
-import { suggestedPlaylists } from "@/lib/mock-data"
-import { useAppState } from "@/contexts/app-state-context"
-import { DashboardView } from "@/components/dashboard/dashboard-view"
+import { useSpotifyLikedSongs, useReleasedPlaylists, useSpotifyPlaylists } from "@/hooks/use-spotify";
+import { mapSpotifySavedTracksToSongs } from "@/lib/spotify-mappers";
+import { DashboardView } from "@/components/dashboard/dashboard-view";
 
-const LIKED_LIMIT = 50
+const LIKED_LIMIT = 50;
 
 export default function DashboardPage() {
-  const { acceptedPlaylists } = useAppState()
-  const { tracks, total, isLoading, error } = useSpotifyLikedSongs(LIKED_LIMIT, 0)
-  const { count: releasedPlaylistCount, range: releasedRange, isLoading: releasedLoading, playlists: releasedPlaylists } = useReleasedPlaylists()
-  const songs = mapSpotifySavedTracksToSongs(tracks)
+  const { tracks, total, isLoading } = useSpotifyLikedSongs(LIKED_LIMIT, 0);
+  const { range: releasedRange, playlistCount: releasedPlaylistCount, isLoading: releasedLoading, playlists: releasedPlaylists } = useReleasedPlaylists();
+  const { total: playlistTotal } = useSpotifyPlaylists(1, 0);
+  const songs = mapSpotifySavedTracksToSongs(tracks);
 
   return (
     <DashboardView
       songs={songs}
-      playlists={suggestedPlaylists}
-      acceptedPlaylists={acceptedPlaylists}
       totalLikedSongs={total}
       isLoading={isLoading}
       releasedYearSummary={{
@@ -27,6 +23,7 @@ export default function DashboardPage() {
         playlists: releasedPlaylists,
         isLoading: releasedLoading,
       }}
+      organizedPlaylistCount={playlistTotal}
     />
-  )
+  );
 }

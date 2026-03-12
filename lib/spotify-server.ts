@@ -119,6 +119,157 @@ export async function getPlaylistTrackIds(
   return { data: ids };
 }
 
+/** Playlist track item from Spotify API */
+interface SpotifyPlaylistTrackItem {
+  added_at?: string;
+  track: {
+    id: string;
+    name: string;
+    duration_ms: number;
+    popularity?: number;
+    artists?: Array<{ id: string; name: string }>;
+    album?: {
+      id: string;
+      name: string;
+      release_date?: string;
+      images?: Array<{ url: string }>;
+    };
+  } | null;
+}
+
+/** Playlist with tracks (Get Playlist or Get Playlist Tracks response) */
+interface SpotifyPlaylistTracksChunk {
+  items: SpotifyPlaylistTrackItem[];
+  next: string | null;
+  total: number;
+}
+
+/** Get Playlist response (we support both `tracks` and `items` for robustness) */
+interface SpotifyPlaylistResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  images: Array<{ url: string; height: number | null; width: number | null }>;
+  tracks?: SpotifyPlaylistTracksChunk;
+  items?: SpotifyPlaylistTracksChunk;
+}
+
+/**
+ * Fetch a single playlist with all its tracks (paginated).
+ */
+export async function getSpotifyPlaylistWithTracks(playlistId: string): Promise<
+  | {
+      data: {
+        id: string;
+        name: string;
+        description: string | null;
+        imageUrl: string | null;
+        trackCount: number;
+        tracks: Array<{
+          added_at?: string;
+          track: {
+            id: string;
+            name: string;
+            duration_ms: number;
+            popularity: number;
+            artists: Array<{ id: string; name: string }>;
+            album: {
+              id: string;
+              name: string;
+              release_date?: string;
+              images: Array<{ url: string }>;
+            };
+          };
+        }>;
+      };
+    }
+  | { error: string; status: number }
+> {
+  const allTracks: Array<{
+    added_at?: string;
+    track: {
+      id: string;
+      name: string;
+      duration_ms: number;
+      popularity: number;
+      artists: Array<{ id: string; name: string }>;
+      album: {
+        id: string;
+        name: string;
+        release_date?: string;
+        images: Array<{ url: string }>;
+      };
+    };
+  }> = [];
+  let playlistMeta: {
+    name: string;
+    description: string | null;
+    imageUrl: string | null;
+  } | null = null;
+  let nextUrl: string | null = null;
+
+  // First fetch the playlist itself (includes initial page of tracks + metadata)
+  const result = await spotifyFetch<SpotifyPlaylistResponse>(
+    `/playlists/${playlistId}`,
+  );
+  if ("error" in result) return result;
+
+  const { name, description, images } = result.data;
+  const firstChunk: SpotifyPlaylistTracksChunk | undefined =
+    result.data.tracks ??
+    (result.data.items as SpotifyPlaylistTracksChunk | undefined);
+
+  if (!firstChunk) {
+    return { error: "Playlist tracks not found in response", status: 500 };
+  }
+
+  playlistMeta = { name, description, imageUrl: images?.[0]?.url ?? null };
+  nextUrl = firstChunk.next;
+
+  const processChunk = (chunk: SpotifyPlaylistTracksChunk) => {
+    for (const item of chunk.items) {
+      if (item.track?.id) {
+        allTracks.push({
+          added_at: item.added_at,
+          track: {
+            id: item.track.id,
+            name: item.track.name,
+            duration_ms: item.track.duration_ms ?? 0,
+            popularity: item.track.popularity ?? 0,
+            artists: item.track.artists ?? [],
+            album: {
+              id: item.track.album?.id ?? "",
+              name: item.track.album?.name ?? "",
+              release_date: item.track.album?.release_date,
+              images: item.track.album?.images ?? [],
+            },
+          },
+        });
+      }
+    }
+  };
+
+  processChunk(firstChunk);
+
+  while (nextUrl) {
+    const nextResult = await spotifyFetch<SpotifyPlaylistTracksChunk>(nextUrl);
+    if ("error" in nextResult) return nextResult;
+    processChunk(nextResult.data);
+    nextUrl = nextResult.data.next;
+  }
+
+  return {
+    data: {
+      id: playlistId,
+      name: playlistMeta!.name,
+      description: playlistMeta!.description,
+      imageUrl: playlistMeta!.imageUrl,
+      trackCount: allTracks.length,
+      tracks: allTracks,
+    },
+  };
+}
+
 /** Fetch all liked saved tracks (paginated). For refresh/sync use. */
 export async function getAllLikedTracks(): Promise<
   | { data: import("@/lib/spotify-types").SpotifySavedTrack[] }
@@ -167,6 +318,40 @@ export async function createSpotifyPlaylist(body: {
       "Content-Type": "application/json",
     },
   });
+}
+
+/**
+ * Upload a custom cover image for a playlist.
+ * Uses Spotify API: PUT https://api.spotify.com/v1/playlists/{playlist_id}/images
+ * Body must be base64-encoded JPEG only, no data URI prefix, max 256 KB.
+ * Requires scopes: ugc-image-upload, playlist-modify-public or playlist-modify-private.
+ */
+export async function uploadPlaylistCover(
+  playlistId: string,
+  base64Jpeg: string,
+): Promise<{ ok: true } | { error: string; status: number }> {
+  const token = await getSpotifyAccessToken();
+  if (!token) {
+    return { error: "Not connected to Spotify", status: 401 };
+  }
+
+  const cleanBase64 = base64Jpeg.replace(/^data:image\/\w+;base64,/, "").replace(/\s/g, "");
+  const url = `${SPOTIFY_API_BASE}/playlists/${playlistId}/images`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "image/jpeg",
+    },
+    body: cleanBase64,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return { error: text || res.statusText, status: res.status };
+  }
+
+  return { ok: true };
 }
 
 /** Add tracks to a playlist. URIs must be "spotify:track:id". Max 100 per request. Requires Spotify access token. */
