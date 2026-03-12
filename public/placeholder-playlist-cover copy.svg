@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" fill="#1a1a1a"/>
+  <rect x="50" y="80" width="200" height="140" rx="8" fill="#2a2a2a" stroke="#404040" stroke-width="1"/>
+  <g fill="#666" stroke="#555" stroke-width="2">
+    <circle cx="100" cy="150" r="24"/>
+    <path d="M98 142v16l12-8-12-8z"/>
+    <rect x="140" y="132" width="80" height="8" rx="4"/>
+    <rect x="140" y="148" width="60" height="8" rx="4"/>
+    <rect x="140" y="164" width="70" height="8" rx="4"/>
+  </g>
+  <text x="150" y="250" font-family="system-ui, sans-serif" font-size="14" fill="#888" text-anchor="middle">No cover image</text>
+</svg>

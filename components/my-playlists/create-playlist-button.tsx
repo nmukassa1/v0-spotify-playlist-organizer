@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, ImageIcon, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useSpotifyQueryClient, spotifyKeys } from "@/hooks/use-spotify";
 import {
   sanitizePlaylistName,
@@ -107,16 +107,30 @@ export function CreatePlaylistButton({ onCreated }: CreatePlaylistButtonProps) {
         queryKey: spotifyKeys.playlists(50, 0),
       });
       const id = data.id;
-      if (id && coverBase64) {
-        const imgRes = await fetch(`/api/spotify/playlists/${id}/images`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: coverBase64 }),
-        });
-        if (!imgRes.ok) {
-          const errData = await imgRes.json().catch(() => ({}));
-          setSubmitError(errData.error ?? "Playlist created but cover upload failed.");
-          return;
+      if (id) {
+        if (coverBase64) {
+          const imgRes = await fetch(`/api/spotify/playlists/${id}/images`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: coverBase64 }),
+          });
+          if (!imgRes.ok) {
+            const errData = await imgRes.json().catch(() => ({}));
+            setSubmitError(errData.error ?? "Playlist created but cover upload failed.");
+            return;
+          }
+        } else {
+          const placeholderRes = await fetch(
+            `/api/spotify/playlists/${id}/images/placeholder`,
+            { method: "PUT" },
+          );
+          if (!placeholderRes.ok) {
+            const errData = await placeholderRes.json().catch(() => ({}));
+            setSubmitError(
+              errData.error ?? "Playlist created but placeholder cover upload failed.",
+            );
+            return;
+          }
         }
       }
       setIsOpen(false);
@@ -198,7 +212,7 @@ export function CreatePlaylistButton({ onCreated }: CreatePlaylistButtonProps) {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 transition-colors">
+                    <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 transition-colors">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -207,12 +221,15 @@ export function CreatePlaylistButton({ onCreated }: CreatePlaylistButtonProps) {
                         className="sr-only"
                         disabled={isCreating}
                       />
-                      <ImageIcon className="h-8 w-8" />
-                      <span className="mt-1 text-[10px]">Add</span>
+                      <img
+                        src="/placeholder-music.jpg"
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     </label>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Optional. JPEG or PNG, max 256 KB (resized automatically).
+                    Optional. Click to add a cover (JPEG or PNG, max 256 KB).
                   </p>
                 </div>
                 {coverError && (
