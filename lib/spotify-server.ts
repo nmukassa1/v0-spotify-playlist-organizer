@@ -335,8 +335,13 @@ export async function uploadPlaylistCover(
     return { error: "Not connected to Spotify", status: 401 };
   }
 
-  const cleanBase64 = base64Jpeg.replace(/^data:image\/\w+;base64,/, "").replace(/\s/g, "");
+  const cleanBase64 = base64Jpeg
+    .replace(/^data:image\/\w+;base64,/, "")
+    .replace(/\s/g, "");
   const url = `${SPOTIFY_API_BASE}/playlists/${playlistId}/images`;
+
+  console.log({ url, cleanBase64, token });
+
   const res = await fetch(url, {
     method: "PUT",
     headers: {
@@ -348,6 +353,13 @@ export async function uploadPlaylistCover(
 
   if (!res.ok) {
     const text = await res.text();
+    console.log({
+      path: url,
+      source: "uploadPlaylistCover",
+      error: text || res.statusText,
+      status: res.status,
+    });
+
     return { error: text || res.statusText, status: res.status };
   }
 
