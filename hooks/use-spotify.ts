@@ -51,6 +51,7 @@ export const spotifyKeys = {
     [...spotifyKeys.all, "playlists", limit, offset] as const,
   playlist: (id: string) => [...spotifyKeys.all, "playlist", id] as const,
   releasedPlaylists: () => [...spotifyKeys.all, "released-playlists"] as const,
+  organizedPlaylists: () => [...spotifyKeys.all, "organized-playlists"] as const,
 };
 
 async function fetcher<T>(url: string): Promise<T> {
