@@ -21,10 +21,10 @@ export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <header className="lg:hidden border-b border-border bg-sidebar">
+    <header className="lg:hidden border-b border-white/20 glass-strong">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <h1 className="text-base font-bold text-foreground">Sortify</h1>
@@ -40,16 +40,16 @@ export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
           />
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl hover:bg-white/40 transition-colors"
             aria-label={isOpen ? "Close menu" : "Open menu"}
           >
-            {isOpen ? <X className="h-4 w-4 text-foreground" /> : <Menu className="h-4 w-4 text-foreground" />}
+            {isOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
           </button>
         </div>
       </div>
 
       {isOpen && (
-        <nav className="border-t border-border px-3 py-2">
+        <nav className="border-t border-white/20 px-3 py-3">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = activeView === item.id
@@ -61,10 +61,10 @@ export function MobileHeader({ activeView, onViewChange }: MobileHeaderProps) {
                   setIsOpen(false)
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all mb-1",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                    : "text-foreground/70 hover:text-foreground hover:bg-white/40"
                 )}
               >
                 <Icon className="h-4 w-4" />

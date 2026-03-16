@@ -22,10 +22,10 @@ export function AppSidebar({ activeView, onViewChange, unsortedCount, playlistCo
   const { user } = useUser()
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-sidebar">
+    <aside className="hidden lg:flex w-64 flex-col border-r border-white/30 glass-strong">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+      <div className="flex items-center gap-3 px-6 py-5 border-b border-white/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
           <Sparkles className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
@@ -48,26 +48,26 @@ export function AppSidebar({ activeView, onViewChange, unsortedCount, playlistCo
                 <button
                   onClick={() => onViewChange(item.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                      : "text-foreground/70 hover:text-foreground hover:bg-white/40"
                   )}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 text-left">{item.label}</span>
                   {item.id === "library" && (
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-mono", isActive ? "bg-white/30 text-white" : "bg-primary/15 text-primary")}>
                       {unsortedCount}
                     </span>
                   )}
                   {item.id === "playlists" && (
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-mono", isActive ? "bg-white/30 text-white" : "bg-primary/15 text-primary")}>
                       {playlistCount}
                     </span>
                   )}
-                  {isActive && <ChevronRight className="h-3 w-3 shrink-0 text-sidebar-primary" />}
+                  {isActive && <ChevronRight className="h-3 w-3 shrink-0 text-white" />}
                 </button>
               </li>
             )
@@ -76,21 +76,21 @@ export function AppSidebar({ activeView, onViewChange, unsortedCount, playlistCo
       </nav>
 
       {/* User section */}
-      <div className="border-t border-sidebar-border px-4 py-4">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-white/20 px-4 py-4">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/40 p-3">
           <UserButton
             afterSignOutUrl="/"
             appearance={{
               elements: {
-                avatarBox: "h-9 w-9",
+                avatarBox: "h-10 w-10 rounded-xl",
               },
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
+            <p className="text-sm font-semibold text-foreground truncate">
               {user?.firstName || user?.username || "User"}
             </p>
-            <p className="text-[11px] text-muted-foreground truncate">
+            <p className="text-[11px] text-foreground/60 truncate">
               {user?.primaryEmailAddress?.emailAddress || "Spotify Connected"}
             </p>
           </div>

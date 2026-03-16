@@ -142,7 +142,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col">
       <MobileHeader activeView={activeView} onViewChange={setActiveView} />
       <div className="flex flex-1 overflow-scroll">
         <AppSidebar

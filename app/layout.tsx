@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
-import { dark } from '@clerk/themes'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -32,7 +31,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1a1a2e',
+  themeColor: '#86efac',
 }
 
 export default function RootLayout({
@@ -41,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
-      <html lang="en" className="dark">
+    <ClerkProvider>
+      <html lang="en">
         <body className={`${_inter.variable} ${_spaceMono.variable} font-sans antialiased`}>
           {children}
           <Analytics />
